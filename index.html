@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shopee Affiliate Dashboard</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Custom Admin Style with 12px-13px global font size */
         body {
             font-size: 12px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -68,7 +65,6 @@
 </head>
 <body>
 
-    <!-- Toast Notification -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11;">
         <div id="liveToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
@@ -79,7 +75,6 @@
     </div>
 
     <div class="d-flex" id="wrapper">
-        <!-- Sidebar -->
         <div class="bg-dark text-white" id="sidebar-wrapper">
             <div class="sidebar-heading text-center py-4 fs-6 fw-bold border-bottom border-secondary">
                 <i class="fa-solid fa-chart-line text-orange me-2"></i>Affiliate Dashboard
@@ -103,18 +98,14 @@
             </div>
         </div>
 
-        <!-- Page Content -->
         <div id="page-content-wrapper" class="w-100 bg-light">
-            <!-- Navbar -->
             <nav class="navbar navbar-expand-lg navbar-light bg-white py-2 px-4 border-bottom shadow-sm">
                 <button class="btn btn-outline-secondary btn-sm" id="menu-toggle"><i class="fa-solid fa-bars"></i></button>
                 <span class="navbar-brand ms-3 mb-0 h1 fs-6" id="menu-title">Upload CSV</span>
             </nav>
 
-            <!-- Main Content Container -->
             <div class="container-fluid px-4 py-3">
                 
-                <!-- Loading Spinner -->
                 <div id="loadingSpinner" class="d-none text-center my-5">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
@@ -122,7 +113,6 @@
                     <p class="mt-2 text-muted">Memproses data CSV...</p>
                 </div>
 
-                <!-- SECTION: UPLOAD CSV -->
                 <section id="menu-upload" class="menu-section">
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -149,12 +139,9 @@
                     </div>
                 </section>
 
-                <!-- SECTION: DASHBOARD -->
                 <section id="menu-dashboard" class="menu-section d-none">
-                    <!-- KPI Cards -->
                     <div class="row row-cols-2 row-cols-md-5 g-2 mb-4" id="kpi-container"></div>
 
-                    <!-- Charts Area -->
                     <div class="card p-3 shadow-sm border-0 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h6 class="fw-bold mb-0"><i class="fa-solid fa-chart-bar me-2"></i>Grafik Performa</h6>
@@ -168,7 +155,6 @@
                         </div>
                     </div>
 
-                    <!-- Dashboard Table -->
                     <div class="card shadow-sm border-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
@@ -190,7 +176,6 @@
                     </div>
                 </section>
 
-                <!-- SECTION: SAVED REPORTS -->
                 <section id="menu-savedreports" class="menu-section d-none">
                     <div class="card shadow-sm border-0">
                         <div class="table-responsive">
@@ -216,7 +201,6 @@
                     </div>
                 </section>
 
-                <!-- SECTION: TAGLINK ANALYZE -->
                 <section id="menu-taglink" class="menu-section d-none">
                     <div class="card p-3 shadow-sm border-0 mb-3">
                         <div class="row align-items-center justify-content-between g-2">
@@ -250,7 +234,6 @@
                     </div>
                 </section>
 
-                <!-- SECTION: ATRIBUSI -->
                 <section id="menu-atribusi" class="menu-section d-none">
                     <div class="card p-2 shadow-sm border-0 mb-3 text-end">
                         <div>
@@ -287,7 +270,6 @@
         </div>
     </div>
 
-    <!-- Modal Detail -->
     <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -314,7 +296,6 @@
         </div>
     </div>
 
-    <!-- Scripts CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -407,7 +388,6 @@
             document.getElementById('loadingSpinner').classList.remove('d-none');
 
             try {
-                // TANGGAL DIAMBIL MURNI HANYA DARI NAMA FILE META ADS CSV
                 globalData.metaDate = extractDateFromFilename(fileMeta.name);
 
                 globalData.meta = await parseCSVFile(fileMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']);
@@ -424,10 +404,19 @@
                 switchMenu('dashboard');
 
             } catch (error) {
+                console.error(error);
                 showToast(error);
             } finally {
                 document.getElementById('loadingSpinner').classList.add('d-none');
             }
+        }
+
+        function cleanNumber(val) {
+            if (val === undefined || val === null) return 0;
+            if (typeof val === 'number') return val;
+            let str = String(val).replace(/[^0-9.-]/g, '');
+            let parsed = parseFloat(str);
+            return isNaN(parsed) ? 0 : parsed;
         }
 
         function aggregateData() {
@@ -450,7 +439,7 @@
                 let hasilIndicator = row['Indikator Hasil'] || '';
                 let isClick = hasilIndicator.toLowerCase().includes('actions:link_click');
                 let clicks = isClick ? (parseInt(row['Hasil']) || 0) : 0;
-                let spend = parseFloat(row['Jumlah yang dibelanjakan (IDR)']) || 0;
+                let spend = cleanNumber(row['Jumlah yang dibelanjakan (IDR)']);
 
                 let matched = false;
                 for (let tag in dataset) {
@@ -477,7 +466,7 @@
             globalData.affiliate.forEach(row => {
                 let rawTag = row['Tag_link1'] || 'Unassigned';
                 let tag = rawTag.toLowerCase().trim();
-                let komisi = parseFloat(row['Komisi Bersih Affiliate (Rp)']) || 0;
+                let komisi = cleanNumber(row['Komisi Bersih Affiliate (Rp)']);
                 let produkName = row['Nama Barange'] || 'Unknown';
                 let status = row['Status Pesanan'] || 'Completed';
 
@@ -503,7 +492,7 @@
                 d.profit = d.komisi - d.spend;
                 d.roi = d.spend > 0 ? (d.profit / d.spend) * 100 : 0;
                 d.roas = d.spend > 0 ? (d.komisi / d.spend) : 0;
-                d.avgKomisi = d.produkTerjual > 0 ? (d.komisi / d.produkTerjual) * 100 : 0;
+                d.avgKomisi = d.produkTerjual > 0 ? (d.komisi / d.produkTerjual) : 0;
 
                 grandTotals.klikMeta += d.klikMeta;
                 grandTotals.klikShopee += d.klikShopee;
@@ -579,7 +568,7 @@
 
             const targetDate = globalData.metaDate;
             if (targetDate === "Nama file tidak valid") {
-                showToast("Gagal Menyimpan! Nama file Meta Ads CSV tidak mengandung format tanggal yang valid (Contoh: Bunda-Aness-Iklan-19-Jun-2026-19-Jun-2026.csv)", true);
+                showToast("Gagal Menyimpan! Nama file Meta Ads CSV tidak mengandung format tanggal yang valid.", true);
                 return;
             }
 
@@ -628,19 +617,33 @@
             }
 
             currentReports.sort((a, b) => b.tanggal.localeCompare(a.tanggal));
-
             tbody.innerHTML = '';
+            
+            let totalKlikMeta = 0;
+            let totalKlikShopee = 0;
+            let totalProdukTerjual = 0;
+            let totalSpend = 0;
+            let totalKomisi = 0;
+            let totalProfit = 0;
+
             currentReports.forEach(report => {
+                totalKlikMeta += report.klikMeta || 0;
+                totalKlikShopee += report.klikShopee || 0;
+                totalProdukTerjual += report.produkTerjual || 0;
+                totalSpend += report.spend || 0;
+                totalKomisi += report.komisi || 0;
+                totalProfit += report.profit || 0;
+
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="fw-bold text-orange">${report.tanggal}</td>
-                    <td>${report.klikMeta.toLocaleString('id-ID')}</td>
-                    <td>${report.klikShopee.toLocaleString('id-ID')}</td>
-                    <td>${report.produkTerjual.toLocaleString('id-ID')}</td>
-                    <td>${formatIDR(report.spend)}</td>
-                    <td>${formatIDR(report.komisi)}</td>
-                    <td class="${report.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(report.profit)}</td>
-                    <td>${report.roi.toFixed(2)}%</td>
+                    <td>${(report.klikMeta || 0).toLocaleString('id-ID')}</td>
+                    <td>${(report.klikShopee || 0).toLocaleString('id-ID')}</td>
+                    <td>${(report.produkTerjual || 0).toLocaleString('id-ID')}</td>
+                    <td>${formatIDR(report.spend || 0)}</td>
+                    <td>${formatIDR(report.komisi || 0)}</td>
+                    <td class="${(report.profit || 0) >= 0 ? 'text-success':'text-danger'}">${formatIDR(report.profit || 0)}</td>
+                    <td>${(report.roi || 0).toFixed(2)}%</td>
                     <td>
                         <button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeReport('${report.tanggal}')">
                             <i class="fa-solid fa-trash-can me-1"></i> Hapus
@@ -649,8 +652,24 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            let totalRoi = totalSpend > 0 ? (totalProfit / totalSpend) * 100 : 0;
+
+            let trTotal = document.createElement('tr');
+            trTotal.className = "table-secondary fw-bold border-top border-dark";
+            trTotal.innerHTML = `
+                <td class="text-dark"><i class="fa-solid fa-calculator me-1"></i> TOTAL REKAP</td>
+                <td>${totalKlikMeta.toLocaleString('id-ID')}</td>
+                <td>${totalKlikShopee.toLocaleString('id-ID')}</td>
+                <td>${totalProdukTerjual.toLocaleString('id-ID')}</td>
+                <td>${formatIDR(totalSpend)}</td>
+                <td>${formatIDR(totalKomisi)}</td>
+                <td class="${totalProfit >= 0 ? 'text-success':'text-danger'}">${formatIDR(totalProfit)}</td>
+                <td>${totalRoi.toFixed(2)}%</td>
+                <td></td>
+            `;
+            tbody.appendChild(trTotal);
         }
-        // -------------------------------
 
         function renderTagLinkTable(filterQuery = '') {
             const tbody = document.getElementById('tableTagLinkBody');
@@ -730,7 +749,9 @@
 
         function renderChart() {
             const ctx = document.getElementById('dashboardChart').getContext('2d');
-            if (activeChart) activeChart.destroy();
+            if (activeChart) {
+                activeChart.destroy();
+            }
             let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]).slice(0, 7);
             activeChart = new Chart(ctx, {
                 type: 'bar',
