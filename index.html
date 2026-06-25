@@ -364,12 +364,15 @@
             });
         }
 
-        function extractDateFromFilename(filename) {
-            const match = filename.match(/(\d{1,2})-([A-Za-z]{3})-(\d{4})/);
+        // FUNGSI BARU: MENGEKSTRAK TANGGAL DARI NAMA FILE COMMISSION REPORT (Format: 20260625)
+        function extractDateFromCommissionFilename(filename) {
+            const match = filename.match(/(\d{4})(\d{2})(\d{2})/);
             if (match) {
-                const day = match[1];
-                const month = match[2].charAt(0).toUpperCase() + match[2].slice(1).toLowerCase();
-                const year = match[3];
+                const year = match[1];
+                const monthNumbers = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const monthIndex = parseInt(match[2]) - 1;
+                const month = monthNumbers[monthIndex] || match[2];
+                const day = parseInt(match[3]).toString(); // Hilangkan leading zero jika ada (misal 05 jadi 5)
                 return `${day} ${month} ${year}`;
             }
             return "Nama file tidak valid";
@@ -388,7 +391,8 @@
             document.getElementById('loadingSpinner').classList.remove('d-none');
 
             try {
-                globalData.metaDate = extractDateFromFilename(fileMeta.name);
+                // SEKARANG TANGGAL DIAMBIL DARI FILE COMMISSION REPORT
+                globalData.metaDate = extractDateFromCommissionFilename(fileAffiliate.name);
 
                 globalData.meta = await parseCSVFile(fileMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']);
                 globalData.webClick = await parseCSVFile(fileWebClick, ['Tag_link']);
@@ -568,7 +572,7 @@
 
             const targetDate = globalData.metaDate;
             if (targetDate === "Nama file tidak valid") {
-                showToast("Gagal Menyimpan! Nama file Meta Ads CSV tidak mengandung format tanggal yang valid.", true);
+                showToast("Gagal Menyimpan! Nama file Affiliate Commission CSV tidak mengandung format tanggal yang valid.", true);
                 return;
             }
 
