@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopee Affiliate Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom Admin Style with 12px-13px global font size */
+        body {
+            font-size: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+            background-color: #f8f9fa;
+        }
+        #wrapper { overflow-x: hidden; }
+        #sidebar-wrapper {
+            min-height: 100vh;
+            width: 220px;
+            transition: margin 0.25s ease-out;
+        }
+        #sidebar-wrapper .sidebar-heading {
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        #sidebar-wrapper .list-group-item {
+            font-size: 12px;
+            padding: 12px 20px;
+            border: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        #sidebar-wrapper .list-group-item:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #fff !important;
+        }
+        #sidebar-wrapper .list-group-item.active {
+            background-color: #ff5722 !important;
+            color: #fff !important;
+            font-weight: bold;
+        }
+        .text-orange { color: #ff5722; }
+        .table-responsive {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        table th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        table td {
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .table-rekap {
+            background-color: #e2e3e5 !important;
+            font-weight: bold;
+        }
+        .card { border-radius: 6px; }
+        .kpi-card { border-left: 4px solid #ff5722; }
+        #wrapper.toggled #sidebar-wrapper { margin-left: -220px; }
+        @media (max-width: 768px) {
+            #sidebar-wrapper { margin-left: -220px; }
+            #wrapper.toggled #sidebar-wrapper { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11;">
+        <div id="liveToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage">Error message here.</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="bg-dark text-white" id="sidebar-wrapper">
+            <div class="sidebar-heading text-center py-4 fs-6 fw-bold border-bottom border-secondary">
+                <i class="fa-solid fa-chart-line text-orange me-2"></i>Affiliate Dashboard
+            </div>
+            <div class="list-group list-group-flush my-3">
+                <button class="list-group-item list-group-item-action bg-transparent text-white active" onclick="switchMenu('upload')">
+                    <i class="fa-solid fa-upload me-2"></i>Upload CSV
+                </button>
+                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('dashboard')">
+                    <i class="fa-solid fa-chart-pie me-2"></i>Dashboard
+                </button>
+                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('taglink')">
+                    <i class="fa-solid fa-tags me-2"></i>TagLink Analyze
+                </button>
+                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('atribusi')">
+                    <i class="fa-solid fa-bullseye me-2"></i>Atribusi
+                </button>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper" class="w-100 bg-light">
+            <!-- Navbar -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-white py-2 px-4 border-bottom shadow-sm">
+                <button class="btn btn-outline-secondary btn-sm" id="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+                <span class="navbar-brand ms-3 mb-0 h1 fs-6" id="menu-title">Upload CSV</span>
+            </nav>
+
+            <!-- Main Content Container -->
+            <div class="container-fluid px-4 py-3">
+                
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="d-none text-center my-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Memproses data CSV...</p>
+                </div>
+
+                <!-- SECTION: UPLOAD CSV -->
+                <section id="menu-upload" class="menu-section">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="card p-3 shadow-sm border-0">
+                                <label class="form-label fw-bold"><i class="fa-brands fa-facebook text-primary me-1"></i> Meta Ads CSV</label>
+                                <input type="file" id="fileMeta" class="form-control form-control-sm" accept=".csv">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-3 shadow-sm border-0">
+                                <label class="form-label fw-bold"><i class="fa-solid fa-globe text-success me-1"></i> Website Click Report CSV</label>
+                                <input type="file" id="fileWebClick" class="form-control form-control-sm" accept=".csv">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-3 shadow-sm border-0">
+                                <label class="form-label fw-bold"><i class="fa-solid fa-bag-shopping text-danger me-1"></i> Affiliate Commission CSV</label>
+                                <input type="file" id="fileAffiliate" class="form-control form-control-sm" accept=".csv">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-4">
+                        <button class="btn btn-primary px-5 fw-bold btn-sm shadow-sm" onclick="processCSV()">ANALISA</button>
+                    </div>
+                </section>
+
+                <!-- SECTION: DASHBOARD -->
+                <section id="menu-dashboard" class="menu-section d-none">
+                    <!-- KPI Cards -->
+                    <div class="row row-cols-2 row-cols-md-5 g-2 mb-4" id="kpi-container"></div>
+
+                    <!-- Charts Area -->
+                    <div class="card p-3 shadow-sm border-0 mb-4">
+                        <h6 class="fw-bold mb-3"><i class="fa-solid fa-chart-bar me-2"></i>Grafik Performa</h6>
+                        <div class="chart-container" style="position: relative; height:250px; width:100%">
+                            <canvas id="dashboardChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Table -->
+                    <div class="card shadow-sm border-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th>Klik Meta</th>
+                                        <th>Klik Shopee</th>
+                                        <th>Produk</th>
+                                        <th>Spend</th>
+                                        <th>Komisi</th>
+                                        <th>Profit</th>
+                                        <th>ROI</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableDashboardBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION: TAGLINK ANALYZE -->
+                <section id="menu-taglink" class="menu-section d-none">
+                    <div class="card p-3 shadow-sm border-0 mb-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <input type="text" id="searchTagLink" class="form-control form-control-sm" placeholder="Cari Tag Link..." oninput="filterTagLink()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm border-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th>Tag Link</th>
+                                        <th>Klik Meta</th>
+                                        <th>Klik Shopee</th>
+                                        <th>Produk</th>
+                                        <th>Spend</th>
+                                        <th>Komisi</th>
+                                        <th>Profit</th>
+                                        <th>ROI</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableTagLinkBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION: ATRIBUSI -->
+                <section id="menu-atribusi" class="menu-section d-none">
+                    <div class="card shadow-sm border-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th>Tag Link</th>
+                                        <th>Campaign</th>
+                                        <th>Klik Meta</th>
+                                        <th>Klik Shopee</th>
+                                        <th>Produk Terjual</th>
+                                        <th>Spend Meta</th>
+                                        <th>Komisi Shopee</th>
+                                        <th>Profit</th>
+                                        <th>ROI</th>
+                                        <th>ROAS</th>
+                                        <th>AVG Komisi / Order</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableAtribusiBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail -->
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold" id="detailModalLabel">Detail Produk</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-striped table-hover mb-0" style="font-size: 11px;">
+                            <thead class="table-secondary sticky-top">
+                                <tr>
+                                    <th>Nama Produk</th>
+                                    <th>Jumlah Terjual</th>
+                                    <th>Komisi</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let globalData = { meta: [], webClick: [], affiliate: [], processed: { totals: {}, byTagLink: {} } };
+        let activeChart = null;
+
+        document.getElementById('menu-toggle').addEventListener('click', function () {
+            document.getElementById('wrapper').classList.toggle('toggled');
+        });
+
+        function switchMenu(menuId) {
+            document.querySelectorAll('.menu-section').forEach(section => section.classList.add('d-none'));
+            document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(`menu-${menuId}`).classList.remove('d-none');
+            event.currentTarget.classList.add('active');
+            let title = menuId.charAt(0).toUpperCase() + menuId.slice(1);
+            if(menuId === 'taglink') title = "TagLink Analyze";
+            document.getElementById('menu-title').innerText = title;
+        }
+
+        function showToast(message) {
+            document.getElementById('toastMessage').innerText = message;
+            new bootstrap.Toast(document.getElementById('liveToast')).show();
+        }
+
+        function parseCSVFile(file, requiredHeaders) {
+            return new Promise((resolve, reject) => {
+                if (!file) return resolve([]);
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    dynamicTyping: true,
+                    complete: function (results) {
+                        if (results.data.length > 0) {
+                            const headers = Object.keys(results.data[0]);
+                            const missing = requiredHeaders.filter(h => !headers.includes(h));
+                            if (missing.length > 0) {
+                                reject(`Format CSV tidak dikenali. Header Hilang: ${missing.join(', ')}`);
+                                return;
+                            }
+                        }
+                        resolve(results.data);
+                    },
+                    error: function () { reject("Gagal membaca file CSV."); }
+                });
+            });
+        }
+
+        async function processCSV() {
+            const fileMeta = document.getElementById('fileMeta').files[0];
+            const fileWebClick = document.getElementById('fileWebClick').files[0];
+            const fileAffiliate = document.getElementById('fileAffiliate').files[0];
+
+            if (!fileMeta || !fileWebClick || !fileAffiliate) {
+                showToast("Format CSV tidak dikenali. Harap upload ketiga file CSV.");
+                return;
+            }
+
+            document.getElementById('loadingSpinner').classList.remove('d-none');
+
+            try {
+                globalData.meta = await parseCSVFile(fileMeta, ['Nama Campaign', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil']);
+                globalData.webClick = await parseCSVFile(fileWebClick, ['Tag Link']);
+                globalData.affiliate = await parseCSVFile(fileAffiliate, ['Tag_link1', 'Komisi Bersih Affiliate (Rp)', 'Nama Produk', 'Status']);
+
+                aggregateData();
+                renderDashboard();
+                renderTagLinkTable();
+                renderAtribusiTable();
+                renderChart();
+                
+                // Switch to dashboard view smoothly
+                document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => {
+                    if(item.getAttribute('onclick').includes('dashboard')) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+                document.querySelectorAll('.menu-section').forEach(s => s.classList.add('d-none'));
+                document.getElementById('menu-dashboard').classList.remove('d-none');
+                document.getElementById('menu-title').innerText = "Dashboard";
+
+            } catch (error) {
+                showToast(error);
+            } finally {
+                document.getElementById('loadingSpinner').classList.add('d-none');
+            }
+        }
+
+        function aggregateData() {
+            let dataset = {};
+
+            globalData.webClick.forEach(row => {
+                let tag = row['Tag Link'] || 'Unassigned';
+                if (!dataset[tag]) dataset[tag] = createDataTemplate();
+                dataset[tag].klikShopee += 1;
+            });
+
+            let totalMetaClicks = 0;
+            let totalMetaSpend = 0;
+            let metaCampaigns = {};
+
+            globalData.meta.forEach(row => {
+                let campaign = row['Nama Campaign'] || 'Unknown';
+                let hasilIndicator = row['Indikator Hasil'] || '';
+                let isClick = hasilIndicator.toLowerCase().includes('actions:link_click');
+                let spend = parseFloat(row['Jumlah yang dibelanjakan (IDR)']) || 0;
+
+                if(!metaCampaigns[campaign]) metaCampaigns[campaign] = { klikMeta: 0, spend: 0 };
+                if(isClick) {
+                    metaCampaigns[campaign].klikMeta += 1;
+                    totalMetaClicks += 1;
+                }
+                metaCampaigns[campaign].spend += spend;
+                totalMetaSpend += spend;
+            });
+
+            let tagsKeys = Object.keys(dataset);
+            if(tagsKeys.length > 0) {
+                tagsKeys.forEach(tag => {
+                    dataset[tag].klikMeta = Math.round(totalMetaClicks / tagsKeys.length);
+                    dataset[tag].spend = totalMetaSpend / tagsKeys.length;
+                    dataset[tag].campaigns = Object.keys(metaCampaigns).join(', ');
+                });
+            }
+
+            globalData.affiliate.forEach(row => {
+                let tag = row['Tag_link1'] || 'Unassigned';
+                let komisi = parseFloat(row['Komisi Bersih Affiliate (Rp)']) || 0;
+                let produkName = row['Nama Produk'] || 'Unknown';
+                let status = row['Status'] || 'Completed';
+
+                if (!dataset[tag]) dataset[tag] = createDataTemplate();
+                
+                dataset[tag].produkTerjual += 1;
+                dataset[tag].komisi += komisi;
+                
+                let existingProd = dataset[tag].productDetails.find(p => p.name === produkName);
+                if(existingProd) {
+                    existingProd.qty += 1;
+                    existingProd.komisi += komisi;
+                } else {
+                    dataset[tag].productDetails.push({ name: produkName, qty: 1, komisi: komisi, status: status });
+                }
+            });
+
+            let grandTotals = createDataTemplate();
+            for (let tag in dataset) {
+                let d = dataset[tag];
+                d.profit = d.komisi - d.spend;
+                d.roi = d.spend > 0 ? (d.profit / d.spend) * 100 : 0;
+                d.roas = d.spend > 0 ? (d.komisi / d.spend) : 0;
+                d.avgKomisi = d.produkTerjual > 0 ? (d.komisi / d.produkTerjual) : 0;
+
+                grandTotals.klikMeta += d.klikMeta;
+                grandTotals.klikShopee += d.klikShopee;
+                grandTotals.produkTerjual += d.produkTerjual;
+                grandTotals.spend += d.spend;
+                grandTotals.komisi += d.komisi;
+            }
+
+            grandTotals.profit = grandTotals.komisi - grandTotals.spend;
+            grandTotals.roi = grandTotals.spend > 0 ? (grandTotals.profit / grandTotals.spend) * 100 : 0;
+
+            globalData.processed.byTagLink = dataset;
+            globalData.processed.totals = grandTotals;
+        }
+
+        function createDataTemplate() {
+            return { klikMeta: 0, klikShopee: 0, produkTerjual: 0, spend: 0, komisi: 0, profit: 0, roi: 0, roas: 0, avgKomisi: 0, campaigns: '', productDetails: [] };
+        }
+
+        function formatIDR(num) {
+            return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+        }
+
+        function renderDashboard() {
+            const totals = globalData.processed.totals;
+            const cpc = totals.klikMeta > 0 ? totals.spend / totals.klikMeta : 0;
+            const cvr = totals.klikShopee > 0 ? (totals.produkTerjual / totals.klikShopee) * 100 : 0;
+
+            document.getElementById('kpi-container').innerHTML = `
+                ${createKPICard('Spend Meta', formatIDR(totals.spend))}
+                ${createKPICard('Klik Meta', totals.klikMeta.toLocaleString('id-ID'))}
+                ${createKPICard('Klik Shopee', totals.klikShopee.toLocaleString('id-ID'))}
+                ${createKPICard('Produk Terjual', totals.produkTerjual.toLocaleString('id-ID'))}
+                ${createKPICard('Komisi Shopee', formatIDR(totals.komisi))}
+                ${createKPICard('Profit', formatIDR(totals.profit), totals.profit >= 0 ? 'text-success' : 'text-danger')}
+                ${createKPICard('ROI', totals.roi.toFixed(2) + '%')}
+                ${createKPICard('CPC', formatIDR(cpc))}
+                ${createKPICard('Conversion Rate', cvr.toFixed(2) + '%')}
+            `;
+
+            document.getElementById('tableDashboardBody').innerHTML = `
+                <tr>
+                    <td>${totals.klikMeta.toLocaleString('id-ID')}</td>
+                    <td>${totals.klikShopee.toLocaleString('id-ID')}</td>
+                    <td>${totals.produkTerjual.toLocaleString('id-ID')}</td>
+                    <td>${formatIDR(totals.spend)}</td>
+                    <td>${formatIDR(totals.komisi)}</td>
+                    <td class="${totals.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(totals.profit)}</td>
+                    <td>${totals.roi.toFixed(2)}%</td>
+                </tr>
+                <tr class="table-rekap">
+                    <td colspan="7" class="text-center bg-secondary text-white fw-bold py-1">REKAP</td>
+                </tr>
+                <tr class="table-secondary fw-bold">
+                    <td>${totals.klikMeta.toLocaleString('id-ID')}</td>
+                    <td>${totals.klikShopee.toLocaleString('id-ID')}</td>
+                    <td>${totals.produkTerjual.toLocaleString('id-ID')}</td>
+                    <td>${formatIDR(totals.spend)}</td>
+                    <td>${formatIDR(totals.komisi)}</td>
+                    <td>${formatIDR(totals.profit)}</td>
+                    <td>${totals.roi.toFixed(2)}%</td>
+                </tr>
+            `;
+        }
+
+        function createKPICard(title, value, colorClass = '') {
+            return `
+                <div class="col">
+                    <div class="card p-2 bg-white shadow-sm h-100 kpi-card">
+                        <div class="text-muted" style="font-size:10px;">${title}</div>
+                        <div class="fw-bold fs-6 ${colorClass}">${value}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTagLinkTable(filterQuery = '') {
+            const tbody = document.getElementById('tableTagLinkBody');
+            tbody.innerHTML = '';
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => ({ tag: key, ...globalData.processed.byTagLink[key] }));
+            sortedList.sort((a, b) => b.komisi - a.komisi);
+
+            sortedList.forEach(item => {
+                if (filterQuery && !item.tag.toLowerCase().includes(filterQuery.toLowerCase())) return;
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="fw-bold text-primary">${item.tag}</td>
+                    <td>${item.klikMeta.toLocaleString('id-ID')}</td>
+                    <td>${item.klikShopee.toLocaleString('id-ID')}</td>
+                    <td>${item.produkTerjual.toLocaleString('id-ID')}</td>
+                    <td>${formatIDR(item.spend)}</td>
+                    <td>${formatIDR(item.komisi)}</td>
+                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(item.profit)}</td>
+                    <td>${item.roi.toFixed(2)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterTagLink() {
+            renderTagLinkTable(document.getElementById('searchTagLink').value);
+        }
+
+        function renderAtribusiTable() {
+            const tbody = document.getElementById('tableAtribusiBody');
+            tbody.innerHTML = '';
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => ({ tag: key, ...globalData.processed.byTagLink[key] }));
+            sortedList.sort((a, b) => b.komisi - a.komisi);
+
+            sortedList.forEach(item => {
+                let tr = document.createElement('tr');
+                let actionBtn = item.productDetails.length > 0 ? `<button class="btn btn-xs btn-outline-danger py-0 px-1" style="font-size:10px" onclick="showProductDetails('${item.tag}')"><i class="fa-solid fa-list"></i> Detail</button>` : '-';
+                tr.innerHTML = `
+                    <td class="fw-bold">${item.tag}</td>
+                    <td class="text-wrap" style="max-width:150px;">${item.campaigns || 'No Meta Attached'}</td>
+                    <td>${item.klikMeta.toLocaleString('id-ID')}</td>
+                    <td>${item.klikShopee.toLocaleString('id-ID')}</td>
+                    <td>${item.produkTerjual.toLocaleString('id-ID')}</td>
+                    <td>${formatIDR(item.spend)}</td>
+                    <td>${formatIDR(item.komisi)}</td>
+                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(item.profit)}</td>
+                    <td>${item.roi.toFixed(2)}%</td>
+                    <td>${item.roas.toFixed(2)}</td>
+                    <td>${formatIDR(item.avgKomisi)}</td>
+                    <td>${actionBtn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showProductDetails(tagKey) {
+            const targetItem = globalData.processed.byTagLink[tagKey];
+            document.getElementById('detailModalLabel').innerText = `Detail Produk Breakdown — ${tagKey}`;
+            let modalTbody = document.getElementById('modalTableBody');
+            modalTbody.innerHTML = '';
+            targetItem.productDetails.forEach(p => {
+                let r = document.createElement('tr');
+                r.innerHTML = `
+                    <td class="text-wrap">${p.name}</td>
+                    <td>${p.qty}</td>
+                    <td>${formatIDR(p.komisi)}</td>
+                    <td><span class="badge bg-success">${p.status}</span></td>
+                `;
+                modalTbody.appendChild(r);
+            });
+            new bootstrap.Modal(document.getElementById('detailModal')).show();
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('dashboardChart').getContext('2d');
+            if (activeChart) activeChart.destroy();
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => ({ tag: key, ...globalData.processed.byTagLink[key] })).slice(0, 7);
+            activeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedList.map(i => i.tag),
+                    datasets: [
+                        { label: 'Spend', data: sortedList.map(i => i.spend), backgroundColor: '#0d6efd' },
+                        { label: 'Komisi', data: sortedList.map(i => i.komisi), backgroundColor: '#2dc574' },
+                        { label: 'Profit', data: sortedList.map(i => i.profit), backgroundColor: '#ffc107' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { font: { size: 10 } } } },
+                    scales: { y: { ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
