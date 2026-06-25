@@ -190,7 +190,7 @@
                     </div>
                 </section>
 
-                <!-- SECTION: SAVED REPORTS (SEPARATED FROM DASHBOARD) -->
+                <!-- SECTION: SAVED REPORTS -->
                 <section id="menu-savedreports" class="menu-section d-none">
                     <div class="card shadow-sm border-0">
                         <div class="table-responsive">
@@ -319,7 +319,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let globalData = { meta: [], webClick: [], affiliate: [], processed: { totals: {}, byTagLink: {} }, metaDate: "-", extractedFileNameDate: "" };
+        let globalData = { meta: [], webClick: [], affiliate: [], processed: { totals: {}, byTagLink: {} }, metaDate: "Nama file tidak valid" };
         let activeChart = null;
 
         document.getElementById('menu-toggle').addEventListener('click', function () {
@@ -335,10 +335,9 @@
             document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => item.classList.remove('active'));
             document.getElementById(`menu-${menuId}`).classList.remove('d-none');
             
-            if(event && event.currentTarget) {
-                event.currentTarget.classList.add('active');
+            if(window.event && window.event.currentTarget && window.event.currentTarget.tagName === 'BUTTON') {
+                window.event.currentTarget.classList.add('active');
             } else {
-                // Fallback selection highlight if triggered via function code directly
                 document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => {
                     if(item.getAttribute('onclick').includes(menuId)) item.classList.add('active');
                 });
@@ -392,7 +391,7 @@
                 const year = match[3];
                 return `${day} ${month} ${year}`;
             }
-            return "";
+            return "Nama file tidak valid";
         }
 
         async function processCSV() {
@@ -408,24 +407,12 @@
             document.getElementById('loadingSpinner').classList.remove('d-none');
 
             try {
-                const extractedDate = extractDateFromFilename(fileMeta.name);
-                if (extractedDate) {
-                    globalData.extractedFileNameDate = extractedDate;
-                } else {
-                    globalData.extractedFileNameDate = "";
-                }
+                // TANGGAL DIAMBIL MURNI HANYA DARI NAMA FILE META ADS CSV
+                globalData.metaDate = extractDateFromFilename(fileMeta.name);
 
-                globalData.meta = await parseCSVFile(fileMeta, ['Awal pelaporan', 'Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']);
+                globalData.meta = await parseCSVFile(fileMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']);
                 globalData.webClick = await parseCSVFile(fileWebClick, ['Tag_link']);
                 globalData.affiliate = await parseCSVFile(fileAffiliate, ['Tag_link1', 'Komisi Bersih Affiliate (Rp)', 'Nama Barange', 'Status Pesanan']);
-
-                if (globalData.extractedFileNameDate) {
-                    globalData.metaDate = globalData.extractedFileNameDate;
-                } else if (globalData.meta.length > 0 && globalData.meta[0]['Awal pelaporan']) {
-                    globalData.metaDate = globalData.meta[0]['Awal pelaporan'];
-                } else {
-                    globalData.metaDate = "-";
-                }
 
                 aggregateData();
                 renderDashboard();
@@ -591,6 +578,11 @@
             }
 
             const targetDate = globalData.metaDate;
+            if (targetDate === "Nama file tidak valid") {
+                showToast("Gagal Menyimpan! Nama file Meta Ads CSV tidak mengandung format tanggal yang valid (Contoh: Bunda-Aness-Iklan-19-Jun-2026-19-Jun-2026.csv)", true);
+                return;
+            }
+
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
 
             const isDuplicate = currentReports.some(report => report.tanggal === targetDate);
