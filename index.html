@@ -117,7 +117,7 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="card p-3 shadow-sm border-0">
-                                <label class="form-label fw-bold"><i class="fa-brands fa-facebook text-primary me-1"></i> Meta Ads CSV <span class="text-danger">*</span></label>
+                                <label class="form-label fw-bold"><i class="fa-brands fa-facebook text-primary me-1"></i> Meta Ads CSV <span class="text-muted fw-normal">(Opsional)</span></label>
                                 <input type="file" id="fileMeta" class="form-control form-control-sm" accept=".csv">
                             </div>
                         </div>
@@ -300,6 +300,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // URL Apps Script Anda yang sudah otomatis ditanam di sini
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzPvJKS6VXIM1bDY7POCUdHMr_Opt5EVJalt7YCk54oNCpafxCcATPM_vgw-WumxC09/exec";
+
         let globalData = { meta: [], webClick: [], affiliate: [], processed: { totals: {}, byTagLink: {} }, metaDate: "Nama file tidak valid" };
         let activeChart = null;
 
@@ -364,7 +367,6 @@
             });
         }
 
-        // FUNGSI BARU: MENGEKSTRAK TANGGAL DARI NAMA FILE COMMISSION REPORT (Format: 20260625)
         function extractDateFromCommissionFilename(filename) {
             const match = filename.match(/(\d{4})(\d{2})(\d{2})/);
             if (match) {
@@ -372,7 +374,7 @@
                 const monthNumbers = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                 const monthIndex = parseInt(match[2]) - 1;
                 const month = monthNumbers[monthIndex] || match[2];
-                const day = parseInt(match[3]).toString(); // Hilangkan leading zero jika ada (misal 05 jadi 5)
+                const day = parseInt(match[3]).toString();
                 return `${day} ${month} ${year}`;
             }
             return "Nama file tidak valid";
@@ -383,19 +385,18 @@
             const fileWebClick = document.getElementById('fileWebClick').files[0];
             const fileAffiliate = document.getElementById('fileAffiliate').files[0];
 
-            if (!fileMeta || !fileAffiliate) {
-                showToast("Format CSV tidak dikenali. Harap pilih file Meta Ads dan Affiliate Commission terlebih dahulu.");
+            if (!fileAffiliate) {
+                showToast("Format CSV tidak dikenali. Harap pilih file Affiliate Commission terlebih dahulu.");
                 return;
             }
 
             document.getElementById('loadingSpinner').classList.remove('d-none');
 
             try {
-                // SEKARANG TANGGAL DIAMBIL DARI FILE COMMISSION REPORT
                 globalData.metaDate = extractDateFromCommissionFilename(fileAffiliate.name);
 
-                globalData.meta = await parseCSVFile(fileMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']);
-                globalData.webClick = await parseCSVFile(fileWebClick, ['Tag_link']);
+                globalData.meta = fileMeta ? await parseCSVFile(fileMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']) : [];
+                globalData.webClick = fileWebClick ? await parseCSVFile(fileWebClick, ['Tag_link']) : [];
                 globalData.affiliate = await parseCSVFile(fileAffiliate, ['Tag_link1', 'Komisi Bersih Affiliate (Rp)', 'Nama Barange', 'Status Pesanan']);
 
                 aggregateData();
@@ -437,35 +438,37 @@
                 });
             }
 
-            globalData.meta.forEach(row => {
-                let rawAdName = row['Nama iklan'] || 'Unknown';
-                let adName = rawAdName.toLowerCase().trim();
-                let hasilIndicator = row['Indikator Hasil'] || '';
-                let isClick = hasilIndicator.toLowerCase().includes('actions:link_click');
-                let clicks = isClick ? (parseInt(row['Hasil']) || 0) : 0;
-                let spend = cleanNumber(row['Jumlah yang dibelanjakan (IDR)']);
+            if (globalData.meta && globalData.meta.length > 0) {
+                globalData.meta.forEach(row => {
+                    let rawAdName = row['Nama iklan'] || 'Unknown';
+                    let adName = rawAdName.toLowerCase().trim();
+                    let hasilIndicator = row['Indikator Hasil'] || '';
+                    let isClick = hasilIndicator.toLowerCase().includes('actions:link_click');
+                    let clicks = isClick ? (parseInt(row['Hasil']) || 0) : 0;
+                    let spend = cleanNumber(row['Jumlah yang dibelanjakan (IDR)']);
 
-                let matched = false;
-                for (let tag in dataset) {
-                    if (tag.includes(adName) || adName.includes(tag)) {
-                        dataset[tag].klikMeta += clicks;
-                        dataset[tag].spend += spend;
-                        if (!dataset[tag].campaigns.includes(rawAdName)) {
-                            dataset[tag].campaigns.push(rawAdName);
+                    let matched = false;
+                    for (let tag in dataset) {
+                        if (tag.includes(adName) || adName.includes(tag)) {
+                            dataset[tag].klikMeta += clicks;
+                            dataset[tag].spend += spend;
+                            if (!dataset[tag].campaigns.includes(rawAdName)) {
+                                dataset[tag].campaigns.push(rawAdName);
+                            }
+                            matched = true;
                         }
-                        matched = true;
                     }
-                }
 
-                if (!matched && adName !== '') {
-                    if (!dataset[adName]) dataset[adName] = createDataTemplate(rawAdName);
-                    dataset[adName].klikMeta += clicks;
-                    dataset[adName].spend += spend;
-                    if (!dataset[adName].campaigns.includes(rawAdName)) {
-                        dataset[adName].campaigns.push(rawAdName);
+                    if (!matched && adName !== '') {
+                        if (!dataset[adName]) dataset[adName] = createDataTemplate(rawAdName);
+                        dataset[adName].klikMeta += clicks;
+                        dataset[adName].spend += spend;
+                        if (!dataset[adName].campaigns.includes(rawAdName)) {
+                            dataset[adName].campaigns.push(rawAdName);
+                        }
                     }
-                }
-            });
+                });
+            }
 
             globalData.affiliate.forEach(row => {
                 let rawTag = row['Tag_link1'] || 'Unassigned';
@@ -562,8 +565,8 @@
             `;
         }
 
-        // --- LOCAL STORAGE FUNCTIONS ---
-        function saveReportToStorage() {
+        // FUNGSI SIMPAN GABUNGAN: LOCAL STORAGE & GOOGLE SHEETS
+        async function saveReportToStorage() {
             const totals = globalData.processed.totals;
             if (!totals || totals.klikMeta === undefined) {
                 showToast("Belum ada data untuk disimpan. Silakan lakukan analisa CSV terlebih dahulu.");
@@ -576,34 +579,60 @@
                 return;
             }
 
+            // 1. SIMPAN KE LOCAL STORAGE LAPTOP
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
-
             const isDuplicate = currentReports.some(report => report.tanggal === targetDate);
+
             if (isDuplicate) {
-                showToast(`Laporan tanggal ${targetDate} sudah tersimpan.`, true);
-                return;
+                showToast(`Laporan tanggal ${targetDate} sudah ada di laptop. Mencoba sinkronisasi ulang ke Google Sheets...`, true);
+            } else {
+                const newReport = {
+                    tanggal: targetDate,
+                    klikMeta: totals.klikMeta,
+                    klikShopee: totals.klikShopee,
+                    produkTerjual: totals.produkTerjual,
+                    spend: totals.spend,
+                    komisi: totals.komisi,
+                    profit: totals.profit,
+                    roi: totals.roi
+                };
+                currentReports.push(newReport);
+                localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
+                renderSavedReportsTable();
             }
 
-            const newReport = {
-                tanggal: targetDate,
-                klikMeta: totals.klikMeta,
-                klikShopee: totals.klikShopee,
-                produkTerjual: totals.produkTerjual,
-                spend: totals.spend,
-                komisi: totals.komisi,
-                profit: totals.profit,
-                roi: totals.roi
-            };
+            // 2. OTOMATIS KIRIM KE GOOGLE SHEETS (BACKGROUND FETCH)
+            showToast("Sedang mengirim rekap data ke Google Sheets Cloud...", false);
 
-            currentReports.push(newReport);
-            localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
-            
-            renderSavedReportsTable();
-            showToast(`Laporan tanggal ${targetDate} berhasil disimpan ke Local Storage!`, false);
+            try {
+                const payload = {
+                    tanggal: targetDate,
+                    klikMeta: totals.klikMeta,
+                    klikShopee: totals.klikShopee,
+                    produkTerjual: totals.produkTerjual,
+                    spend: Math.round(totals.spend),
+                    komisi: Math.round(totals.komisi),
+                    profit: Math.round(totals.profit),
+                    roi: totals.roi.toFixed(2)
+                };
+
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                showToast(`Sukses! Laporan ${targetDate} aman di Laptop & Google Sheets.`, false);
+
+            } catch (error) {
+                console.error("Gagal sinkronisasi Google Sheets:", error);
+                showToast("Gagal kirim ke Google Sheets, namun data tetap tersimpan aman di Laptop.", true);
+            }
         }
 
         function removeReport(dateStr) {
-            if (confirm(`Apakah Anda yakin ingin menghapus laporan ini?`)) {
+            if (confirm(`Apakah Anda yakin ingin menghapus laporan ini di Local Storage laptop? (Data di Google Sheets tidak akan terhapus)`)) {
                 let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
                 currentReports = currentReports.filter(r => r.tanggal !== dateStr);
                 localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
@@ -808,6 +837,7 @@
             downloadCSV(csv, `Rekap_Dashboard_Affiliate_${globalData.metaDate}.csv`);
         }
 
+        // Fungsi export csv taglink
         function exportTagLinkCSV() {
             let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
             if(sortedList.length === 0) {
@@ -824,6 +854,7 @@
             downloadCSV(csv, `Analisis_TagLink_Report_${globalData.metaDate}.csv`);
         }
 
+        // Fungsi export csv atribusi
         function exportAtribusiCSV() {
             let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
             if(sortedList.length === 0) {
