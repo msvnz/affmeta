@@ -145,7 +145,10 @@
                     <div class="row row-cols-2 row-cols-md-5 g-2 mb-4" id="kpi-container"></div>
 
                     <div class="card p-3 shadow-sm border-0 mb-4">
-                        <h6 class="fw-bold mb-3"><i class="fa-solid fa-chart-bar me-2"></i>Grafik Performa</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0"><i class="fa-solid fa-chart-bar me-2"></i>Grafik Performa</h6>
+                            <button class="btn btn-sm btn-success px-3 fw-bold" onclick="exportDashboardCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV Rekap</button>
+                        </div>
                         <div class="chart-container" style="position: relative; height:250px; width:100%">
                             <canvas id="dashboardChart"></canvas>
                         </div>
@@ -173,9 +176,12 @@
 
                 <section id="menu-taglink" class="menu-section d-none">
                     <div class="card p-3 shadow-sm border-0 mb-3">
-                        <div class="row align-items-center">
+                        <div class="row align-items-center justify-content-between g-2">
                             <div class="col-md-4">
                                 <input type="text" id="searchTagLink" class="form-control form-control-sm" placeholder="Cari Tag Link..." oninput="filterTagLink()">
+                            </div>
+                            <div class="col-md-auto">
+                                <button class="btn btn-sm btn-success fw-bold" onclick="exportTagLinkCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV TagLink</button>
                             </div>
                         </div>
                     </div>
@@ -201,6 +207,11 @@
                 </section>
 
                 <section id="menu-atribusi" class="menu-section d-none">
+                    <div class="card p-2 shadow-sm border-0 mb-3 text-end">
+                        <div>
+                            <button class="btn btn-sm btn-success fw-bold" onclick="exportAtribusiCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV Atribusi</button>
+                        </div>
+                    </div>
                     <div class="card shadow-sm border-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
@@ -318,7 +329,6 @@
             document.getElementById('loadingSpinner').classList.remove('d-none');
 
             try {
-                // Sesuai nama kolom asli dari file contoh Anda
                 globalData.meta = await parseCSVFile(fileMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']);
                 globalData.webClick = await parseCSVFile(fileWebClick, ['Tag_link']);
                 globalData.affiliate = await parseCSVFile(fileAffiliate, ['Tag_link1', 'Komisi Bersih Affiliate (Rp)', 'Nama Barange', 'Status Pesanan']);
@@ -329,7 +339,6 @@
                 renderAtribusiTable();
                 renderChart();
                 
-                // Pindah menu ke Dashboard secara otomatis
                 document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => {
                     if(item.getAttribute('onclick').includes('dashboard')) item.classList.add('active');
                     else item.classList.remove('active');
@@ -348,17 +357,19 @@
         function aggregateData() {
             let dataset = {};
 
-            // 1. Ambil list Tag_link dari Website Click Report (bersihkan tanda berlebih "----")
             globalData.webClick.forEach(row => {
                 let rawTag = row['Tag_link'] || 'Unassigned';
-                let tag = rawTag.replace(/-+$/, "").toLowerCase().trim(); // standardisasi menjadi text bersih spt 'ibrightl10fb'
+                let tag = rawTag.replace(/-+$/, "").toLowerCase().trim();
                 if (tag === '') return;
 
                 if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag.replace(/-+$/, ""));
                 dataset[tag].klikShopee += 1;
             });
 
-            // 2. Ambil data Iklan Meta
+            let totalMetaClicks = 0;
+            let totalMetaSpend = 0;
+            let metaCampaigns = {};
+
             globalData.meta.forEach(row => {
                 let rawAdName = row['Nama iklan'] || 'Unknown';
                 let adName = rawAdName.toLowerCase().trim();
@@ -367,7 +378,6 @@
                 let clicks = isClick ? (parseInt(row['Hasil']) || 0) : 0;
                 let spend = parseFloat(row['Jumlah yang dibelanjakan (IDR)']) || 0;
 
-                // Cari apakah adName ini COCOK atau ada di dalam nama Tag_link Shopee Anda
                 let matched = false;
                 for (let tag in dataset) {
                     if (tag.includes(adName) || adName.includes(tag)) {
@@ -380,7 +390,6 @@
                     }
                 }
 
-                // Jika tidak langsung cocok, buat grup data baru berdasarkan Nama iklan tersebut
                 if (!matched && adName !== '') {
                     if (!dataset[adName]) dataset[adName] = createDataTemplate(rawAdName);
                     dataset[adName].klikMeta += clicks;
@@ -391,7 +400,6 @@
                 }
             });
 
-            // 3. Gabungkan laporan Komisi Affiliate Shopee
             globalData.affiliate.forEach(row => {
                 let rawTag = row['Tag_link1'] || 'Unassigned';
                 let tag = rawTag.toLowerCase().trim();
@@ -415,7 +423,6 @@
                 }
             });
 
-            // Hitung Profit, ROI, ROAS, dll.
             let grandTotals = createDataTemplate('TOTAL REKAP');
             for (let tag in dataset) {
                 let d = dataset[tag];
@@ -594,6 +601,74 @@
                     scales: { y: { ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } }
                 }
             });
+        }
+
+        // ==========================================
+        // ENGINE DETEKSI & DOWNLOAD EXPORT CSV DATA
+        // ==========================================
+        function downloadCSV(csvContent, filename) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        function exportDashboardCSV() {
+            const totals = globalData.processed.totals;
+            if(!totals.klikMeta && totals.klikMeta !== 0) {
+                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
+                return;
+            }
+            let csv = "Metrik Utama,Value\n";
+            csv += `Total Spend Meta,${Math.round(totals.spend)}\n`;
+            csv += `Total Klik Meta,${totals.klikMeta}\n`;
+            csv += `Total Klik Shopee,${totals.klikShopee}\n`;
+            csv += `Total Produk Terjual,${totals.produkTerjual}\n`;
+            csv += `Total Komisi Shopee,${Math.round(totals.komisi)}\n`;
+            csv += `Total Profit,${Math.round(totals.profit)}\n`;
+            csv += `ROI,${totals.roi.toFixed(2)}%\n`;
+            
+            downloadCSV(csv, "Rekap_Dashboard_Affiliate.csv");
+        }
+
+        function exportTagLinkCSV() {
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
+            if(sortedList.length === 0) {
+                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
+                return;
+            }
+            sortedList.sort((a, b) => b.komisi - a.komisi);
+
+            let csv = "Tag Link,Klik Meta,Klik Shopee,Produk,Spend,Komisi,Profit,ROI\n";
+            sortedList.forEach(item => {
+                csv += `"${item.displayTag}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roi.toFixed(2)}%\n`;
+            });
+
+            downloadCSV(csv, "Analisis_TagLink_Report.csv");
+        }
+
+        function exportAtribusiCSV() {
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
+            if(sortedList.length === 0) {
+                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
+                return;
+            }
+            sortedList.sort((a, b) => b.komisi - a.komisi);
+
+            let csv = "Tag Link,Campaign / Iklan,Klik Meta,Klik Shopee,Produk Terjual,Spend Meta,Komisi Shopee,Profit,ROI,ROAS,AVG Komisi per Order\n";
+            sortedList.forEach(item => {
+                let camp = item.campaigns.join(' | ') || '-';
+                csv += `"${item.displayTag}","${camp}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roi.toFixed(2)}%,${item.roas.toFixed(2)},${Math.round(item.avgKomisi)}\n`;
+            });
+
+            downloadCSV(csv, "Laporan_Atribusi_Bisnis.csv");
         }
     </script>
 </body>
