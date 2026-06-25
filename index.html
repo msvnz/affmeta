@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shopee Affiliate Dashboard</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Custom Admin Style with 12px-13px global font size */
@@ -68,7 +66,6 @@
 </head>
 <body>
 
-    <!-- Toast Notification -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11;">
         <div id="liveToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
@@ -79,7 +76,6 @@
     </div>
 
     <div class="d-flex" id="wrapper">
-        <!-- Sidebar -->
         <div class="bg-dark text-white" id="sidebar-wrapper">
             <div class="sidebar-heading text-center py-4 fs-6 fw-bold border-bottom border-secondary">
                 <i class="fa-solid fa-chart-line text-orange me-2"></i>Affiliate Dashboard
@@ -103,18 +99,14 @@
             </div>
         </div>
 
-        <!-- Page Content -->
         <div id="page-content-wrapper" class="w-100 bg-light">
-            <!-- Navbar -->
             <nav class="navbar navbar-expand-lg navbar-light bg-white py-2 px-4 border-bottom shadow-sm">
                 <button class="btn btn-outline-secondary btn-sm" id="menu-toggle"><i class="fa-solid fa-bars"></i></button>
                 <span class="navbar-brand ms-3 mb-0 h1 fs-6" id="menu-title">Upload CSV</span>
             </nav>
 
-            <!-- Main Content Container -->
             <div class="container-fluid px-4 py-3">
                 
-                <!-- Loading Spinner -->
                 <div id="loadingSpinner" class="d-none text-center my-5">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
@@ -122,7 +114,6 @@
                     <p class="mt-2 text-muted">Memproses data CSV...</p>
                 </div>
 
-                <!-- SECTION: UPLOAD CSV -->
                 <section id="menu-upload" class="menu-section">
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -149,12 +140,9 @@
                     </div>
                 </section>
 
-                <!-- SECTION: DASHBOARD -->
                 <section id="menu-dashboard" class="menu-section d-none">
-                    <!-- KPI Cards -->
                     <div class="row row-cols-2 row-cols-md-5 g-2 mb-4" id="kpi-container"></div>
 
-                    <!-- Charts Area -->
                     <div class="card p-3 shadow-sm border-0 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h6 class="fw-bold mb-0"><i class="fa-solid fa-chart-bar me-2"></i>Grafik Performa</h6>
@@ -168,7 +156,6 @@
                         </div>
                     </div>
 
-                    <!-- Dashboard Table -->
                     <div class="card shadow-sm border-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
@@ -190,7 +177,6 @@
                     </div>
                 </section>
 
-                <!-- SECTION: SAVED REPORTS -->
                 <section id="menu-savedreports" class="menu-section d-none">
                     <div class="card shadow-sm border-0">
                         <div class="table-responsive">
@@ -216,7 +202,6 @@
                     </div>
                 </section>
 
-                <!-- SECTION: TAGLINK ANALYZE -->
                 <section id="menu-taglink" class="menu-section d-none">
                     <div class="card p-3 shadow-sm border-0 mb-3">
                         <div class="row align-items-center justify-content-between g-2">
@@ -250,7 +235,6 @@
                     </div>
                 </section>
 
-                <!-- SECTION: ATRIBUSI -->
                 <section id="menu-atribusi" class="menu-section d-none">
                     <div class="card p-2 shadow-sm border-0 mb-3 text-end">
                         <div>
@@ -287,7 +271,6 @@
         </div>
     </div>
 
-    <!-- Modal Detail -->
     <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -314,7 +297,6 @@
         </div>
     </div>
 
-    <!-- Scripts CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -579,7 +561,7 @@
 
             const targetDate = globalData.metaDate;
             if (targetDate === "Nama file tidak valid") {
-                showToast("Gagal Menyimpan! Nama file Meta Ads CSV tidak mengandung format tanggal yang valid (Contoh: Bunda-Aness-Iklan-19-Jun-2026-19-Jun-2026.csv)", true);
+                showToast("Gagal Menyimpan! Nama file Meta Ads CSV tidak mengandung format tanggal yang valid.", true);
                 return;
             }
 
@@ -627,10 +609,29 @@
                 return;
             }
 
+            // Urutkan berdasarkan tanggal terbaru
             currentReports.sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 
             tbody.innerHTML = '';
+            
+            // Inisialisasi variabel penampung total keseluruhan list
+            let totalKlikMeta = 0;
+            let totalKlikShopee = 0;
+            let totalProdukTerjual = 0;
+            let totalSpend = 0;
+            let totalKomisi = 0;
+            let totalProfit = 0;
+
+            // Render baris data laporan
             currentReports.forEach(report => {
+                // Tambahkan nilai ke variabel rekap total
+                totalKlikMeta += report.klikMeta || 0;
+                totalKlikShopee += report.klikShopee || 0;
+                totalProdukTerjual += report.produkTerjual || 0;
+                totalSpend += report.spend || 0;
+                totalKomisi += report.komisi || 0;
+                totalProfit += report.profit || 0;
+
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="fw-bold text-orange">${report.tanggal}</td>
@@ -649,6 +650,25 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            // Hitung Ulang ROI Akurat untuk Baris Total
+            let totalRoi = totalSpend > 0 ? (totalProfit / totalSpend) * 100 : 0;
+
+            // Buat baris khusus Grand Total di bagian bawah tabel
+            let trTotal = document.createElement('tr');
+            trTotal.className = "table-secondary fw-bold border-top border-dark";
+            trTotal.innerHTML = `
+                <td class="text-dark"><i class="fa-solid fa-calculator me-1"></i> TOTAL REKAP</td>
+                <td>${totalKlikMeta.toLocaleString('id-ID')}</td>
+                <td>${totalKlikShopee.toLocaleString('id-ID')}</td>
+                <td>${totalProdukTerjual.toLocaleString('id-ID')}</td>
+                <td>${formatIDR(totalSpend)}</td>
+                <td>${formatIDR(totalKomisi)}</td>
+                <td class="${totalProfit >= 0 ? 'text-success':'text-danger'}">${formatIDR(totalProfit)}</td>
+                <td>${totalRoi.toFixed(2)}%</td>
+                <td></td>
+            `;
+            tbody.appendChild(trTotal);
         }
         // -------------------------------
 
@@ -662,159 +682,4 @@
                 if (filterQuery && !item.displayTag.toLowerCase().includes(filterQuery.toLowerCase())) return;
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${globalData.metaDate}</td>
-                    <td class="fw-bold text-primary">${item.displayTag}</td>
-                    <td>${item.klikMeta.toLocaleString('id-ID')}</td>
-                    <td>${item.klikShopee.toLocaleString('id-ID')}</td>
-                    <td>${item.produkTerjual.toLocaleString('id-ID')}</td>
-                    <td>${formatIDR(item.spend)}</td>
-                    <td>${formatIDR(item.komisi)}</td>
-                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(item.profit)}</td>
-                    <td>${item.roi.toFixed(2)}%</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function filterTagLink() {
-            renderTagLinkTable(document.getElementById('searchTagLink').value);
-        }
-
-        function renderAtribusiTable() {
-            const tbody = document.getElementById('tableAtribusiBody');
-            tbody.innerHTML = '';
-            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
-            sortedList.sort((a, b) => b.komisi - a.komisi);
-
-            sortedList.forEach((item, index) => {
-                let tr = document.createElement('tr');
-                let actionBtn = item.productDetails.length > 0 ? `<button class="btn btn-xs btn-outline-danger py-0 px-1" style="font-size:10px" onclick="showProductDetails('${item.displayTag.toLowerCase()}')"><i class="fa-solid fa-list"></i> Detail</button>` : '-';
-                tr.innerHTML = `
-                    <td>${globalData.metaDate}</td>
-                    <td class="fw-bold">${item.displayTag}</td>
-                    <td class="text-wrap" style="max-width:150px;">${item.campaigns.join(', ') || '-'}</td>
-                    <td>${item.klikMeta.toLocaleString('id-ID')}</td>
-                    <td>${item.klikShopee.toLocaleString('id-ID')}</td>
-                    <td>${item.produkTerjual.toLocaleString('id-ID')}</td>
-                    <td>${formatIDR(item.spend)}</td>
-                    <td>${formatIDR(item.komisi)}</td>
-                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(item.profit)}</td>
-                    <td>${item.roi.toFixed(2)}%</td>
-                    <td>${item.roas.toFixed(2)}</td>
-                    <td>${formatIDR(item.avgKomisi)}</td>
-                    <td>${actionBtn}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function showProductDetails(tagKey) {
-            const targetItem = globalData.processed.byTagLink[tagKey.trim()];
-            if(!targetItem) return;
-            
-            document.getElementById('detailModalLabel').innerText = `Detail Produk Breakdown — ${targetItem.displayTag}`;
-            let modalTbody = document.getElementById('modalTableBody');
-            modalTbody.innerHTML = '';
-            targetItem.productDetails.forEach(p => {
-                let r = document.createElement('tr');
-                r.innerHTML = `
-                    <td class="text-wrap">${p.name}</td>
-                    <td>${p.qty}</td>
-                    <td>${formatIDR(p.komisi)}</td>
-                    <td><span class="badge bg-success">${p.status}</span></td>
-                `;
-                modalTbody.appendChild(r);
-            });
-            new bootstrap.Modal(document.getElementById('detailModal')).show();
-        }
-
-        function renderChart() {
-            const ctx = document.getElementById('dashboardChart').getContext('2d');
-            if (activeChart) activeChart.destroy();
-            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]).slice(0, 7);
-            activeChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: sortedList.map(i => i.displayTag),
-                    datasets: [
-                        { label: 'Spend', data: sortedList.map(i => i.spend), backgroundColor: '#0d6efd' },
-                        { label: 'Komisi', data: sortedList.map(i => i.komisi), backgroundColor: '#2dc574' },
-                        { label: 'Profit', data: sortedList.map(i => i.profit), backgroundColor: '#ffc107' }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { font: { size: 10 } } } },
-                    scales: { y: { ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } }
-                }
-            });
-        }
-
-        function downloadCSV(csvContent, filename) {
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            if (link.download !== undefined) {
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", filename);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        }
-
-        function exportDashboardCSV() {
-            const totals = globalData.processed.totals;
-            if(!totals.klikMeta && totals.klikMeta !== 0) {
-                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
-                return;
-            }
-            let csv = "Tanggal,Metrik Utama,Value\n";
-            csv += `${globalData.metaDate},Total Spend Meta,${Math.round(totals.spend)}\n`;
-            csv += `${globalData.metaDate},Total Klik Meta,${totals.klikMeta}\n`;
-            csv += `${globalData.metaDate},Total Klik Shopee,${totals.klikShopee}\n`;
-            csv += `${globalData.metaDate},Total Produk Terjual,${totals.produkTerjual}\n`;
-            csv += `${globalData.metaDate},Total Komisi Shopee,${Math.round(totals.komisi)}\n`;
-            csv += `${globalData.metaDate},Total Profit,${Math.round(totals.profit)}\n`;
-            csv += `${globalData.metaDate},ROI,${totals.roi.toFixed(2)}%\n`;
-            
-            downloadCSV(csv, `Rekap_Dashboard_Affiliate_${globalData.metaDate}.csv`);
-        }
-
-        function exportTagLinkCSV() {
-            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
-            if(sortedList.length === 0) {
-                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
-                return;
-            }
-            sortedList.sort((a, b) => b.komisi - a.komisi);
-
-            let csv = "Tanggal,Tag Link,Klik Meta,Klik Shopee,Produk,Spend,Komisi,Profit,ROI\n";
-            sortedList.forEach(item => {
-                csv += `${globalData.metaDate},"${item.displayTag}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roi.toFixed(2)}%\n`;
-            });
-
-            downloadCSV(csv, `Analisis_TagLink_Report_${globalData.metaDate}.csv`);
-        }
-
-        function exportAtribusiCSV() {
-            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
-            if(sortedList.length === 0) {
-                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
-                return;
-            }
-            sortedList.sort((a, b) => b.komisi - a.komisi);
-
-            let csv = "Tanggal,Tag Link,Campaign / Iklan,Klik Meta,Klik Shopee,Produk Terjual,Spend Meta,Komisi Shopee,Profit,ROI,ROAS,AVG Komisi per Order\n";
-            sortedList.forEach(item => {
-                let camp = item.campaigns.join(' | ') || '-';
-                csv += `${globalData.metaDate},"${item.displayTag}","${camp}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roi.toFixed(2)}%,${item.roas.toFixed(2)},${Math.round(item.avgKomisi)}\n`;
-            });
-
-            downloadCSV(csv, `Laporan_Atribusi_Bisnis_${globalData.metaDate}.csv`);
-        }
-    </script>
-</body>
-</html>
+                    <td>${
