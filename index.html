@@ -382,18 +382,22 @@
             });
         }
 
-        function extractDateFromCommissionFilename(filename) {
-            const match = filename.match(/(\d{4})(\d{2})(\d{2})/);
-            if (match) {
-                const year = match[1];
-                const monthNumbers = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                const monthIndex = parseInt(match[2]) - 1;
-                const month = monthNumbers[monthIndex] || match[2];
-                const day = parseInt(match[3]).toString();
-                return `${day} ${month} ${year}`;
-            }
-            return "Nama file tidak valid";
-        }
+   function extractDateFromCommissionFilename(filename) {
+    const match = filename.match(/(\d{4})(\d{2})(\d{2})/);
+    if (match) {
+        const year = match[1];
+        const monthNumbers = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthIndex = parseInt(match[2]) - 1;
+        const month = monthNumbers[monthIndex] || match[2];
+        
+        // PENGURUTAN FIX: Memastikan tanggal selalu 2 digit (menambahkan angka 0 jika < 10)
+        let day = parseInt(match[3]);
+        let dayString = day < 10 ? '0' + day : day.toString();
+        
+        return `${dayString} ${month} ${year}`;
+    }
+    return "Nama file tidak valid";
+}
 
         async function processCSV() {
             const fileMeta = document.getElementById('fileMeta').files[0];
