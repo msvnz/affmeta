@@ -1,867 +1,317 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopee Affiliate Dashboard</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Affiliate Dashboard & Attribution</title>
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #18bc9c;
+            --danger-color: #e74c3c;
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+        }
+
         body {
-            font-size: 12px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            overflow-x: hidden;
-            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
         }
-        #wrapper { overflow-x: hidden; }
-        #sidebar-wrapper {
-            min-height: 100vh;
-            width: 220px;
-            transition: margin 0.25s ease-out;
+
+        .navbar {
+            background-color: var(--primary-color);
+            padding: 15px 20px;
+            display: flex;
+            gap: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        #sidebar-wrapper .sidebar-heading {
-            font-size: 14px;
-            letter-spacing: 0.5px;
-        }
-        #sidebar-wrapper .list-group-item {
-            font-size: 12px;
-            padding: 12px 20px;
-            border: none;
-            transition: all 0.2s;
+
+        .nav-btn {
+            background-color: transparent;
+            color: white;
+            border: 2px solid white;
+            padding: 8px 16px;
             cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: all 0.3s ease;
         }
-        #sidebar-wrapper .list-group-item:hover {
-            background-color: rgba(255, 255, 255, 0.1) !important;
-            color: #fff !important;
+
+        .nav-btn:hover, .nav-btn.active {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
         }
-        #sidebar-wrapper .list-group-item.active {
-            background-color: #ff5722 !important;
-            color: #fff !important;
+
+        .container {
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            color: var(--primary-color);
             font-weight: bold;
         }
-        .text-orange { color: #ff5722; }
-        .table-responsive {
-            max-height: 70vh;
-            overflow-y: auto;
+
+        tr:hover {
+            background-color: #f9f9f9;
         }
-        table th {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
         }
-        table td {
-            font-size: 12px;
-            white-space: nowrap;
+
+        .btn-danger:hover {
+            background-color: #c0392b;
         }
-        .card { border-radius: 6px; }
-        .kpi-card { border-left: 4px solid #ff5722; }
-        #wrapper.toggled #sidebar-wrapper { margin-left: -220px; }
-        @media (max-width: 768px) {
-            #sidebar-wrapper { margin-left: -220px; }
-            #wrapper.toggled #sidebar-wrapper { margin-left: 0; }
+
+        /* Desain area input simulasi */
+        .mock-input-section {
+            background: #eef2f7;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Toast Notification -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11;">
-        <div id="liveToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body" id="toastMessage">Error message here.</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
+    <div class="navbar">
+        <button class="nav-btn active" id="btn-rekap" onclick="switchPage('rekap-harian-page', 'btn-rekap')">Rekap Harian</button>
+        <button class="nav-btn" id="btn-atribusi" onclick="switchPage('attribution-rekap-page', 'btn-atribusi')">Rekap Atribusi</button>
     </div>
 
-    <div class="d-flex" id="wrapper">
-        <!-- Sidebar -->
-        <div class="bg-dark text-white" id="sidebar-wrapper">
-            <div class="sidebar-heading text-center py-4 fs-6 fw-bold border-bottom border-secondary">
-                <i class="fa-solid fa-chart-line text-orange me-2"></i>Affiliate Dashboard
+    <div class="container">
+
+        <div id="rekap-harian-page" class="page-content">
+            <h2>Laporan Rekap Harian</h2>
+            <p>Menampilkan performa historis harian dari lini masa affiliate Anda.</p>
+            
+            <div class="table-container">
+                <table id="rekapTable">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Klik Meta</th>
+                            <th>Klik Shopee</th>
+                            <th>Produk Terjual</th>
+                            <th>Spend Meta</th>
+                            <th>Komisi Shopee</th>
+                            <th>Profit</th>
+                            <th>ROI</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rekapTableBody">
+                        </tbody>
+                </table>
             </div>
-            <div class="list-group list-group-flush my-3">
-                <button class="list-group-item list-group-item-action bg-transparent text-white active" onclick="switchMenu('upload')">
-                    <i class="fa-solid fa-upload me-2"></i>Upload CSV
-                </button>
-                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('dashboard')">
-                    <i class="fa-solid fa-chart-pie me-2"></i>Dashboard
-                </button>
-                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('savedreports')">
-                    <i class="fa-solid fa-database me-2"></i>Saved Reports
-                </button>
-                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('taglink')">
-                    <i class="fa-solid fa-tags me-2"></i>TagLink Analyze
-                </button>
-                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('atribusi')">
-                    <i class="fa-solid fa-bullseye me-2"></i>Atribusi
-                </button>
+        </div>
+
+        <div id="attribution-rekap-page" class="page-content" style="display: none;">
+            <h2>Rekap Atribusi Taglink Harian</h2>
+            <p>Daftar riwayat performa iklan berdasarkan pelacakan <b>Taglink</b> iklan harian Anda.</p>
+            
+            <div class="table-container">
+                <table id="attributionTable">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Klik Meta</th>
+                            <th>Klik Shopee</th>
+                            <th>Produk Terjual</th>
+                            <th>Spend Meta</th>
+                            <th>Komisi Shopee</th>
+                            <th>Profit</th>
+                            <th>ROI</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attributionTableBody">
+                        </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Page Content -->
-        <div id="page-content-wrapper" class="w-100 bg-light">
-            <!-- Navbar -->
-            <nav class="navbar navbar-expand-lg navbar-light bg-white py-2 px-4 border-bottom shadow-sm">
-                <button class="btn btn-outline-secondary btn-sm" id="menu-toggle"><i class="fa-solid fa-bars"></i></button>
-                <span class="navbar-brand ms-3 mb-0 h1 fs-6" id="menu-title">Upload CSV</span>
-            </nav>
-
-            <!-- Main Content Container -->
-            <div class="container-fluid px-4 py-3">
-                
-                <!-- Loading Spinner -->
-                <div id="loadingSpinner" class="d-none text-center my-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2 text-muted">Memproses data CSV...</p>
-                </div>
-
-                <!-- SECTION: UPLOAD CSV -->
-                <section id="menu-upload" class="menu-section">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="card p-3 shadow-sm border-0">
-                                <label class="form-label fw-bold"><i class="fa-brands fa-facebook text-primary me-1"></i> Meta Ads CSV <span class="text-muted fw-normal">(Opsional)</span></label>
-                                <input type="file" id="fileMeta" class="form-control form-control-sm" accept=".csv">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card p-3 shadow-sm border-0">
-                                <label class="form-label fw-bold"><i class="fa-solid fa-globe text-success me-1"></i> Website Click Report CSV <span class="text-muted fw-normal">(Opsional)</span></label>
-                                <input type="file" id="fileWebClick" class="form-control form-control-sm" accept=".csv">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card p-3 shadow-sm border-0">
-                                <label class="form-label fw-bold"><i class="fa-solid fa-bag-shopping text-danger me-1"></i> Affiliate Commission CSV <span class="text-danger">*</span></label>
-                                <input type="file" id="fileAffiliate" class="form-control form-control-sm" accept=".csv">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-center mt-4">
-                        <button class="btn btn-primary px-5 fw-bold btn-sm shadow-sm" onclick="processCSV()">ANALISA</button>
-                    </div>
-                </section>
-
-                <!-- SECTION: DASHBOARD -->
-                <section id="menu-dashboard" class="menu-section d-none">
-                    <!-- KPI Cards -->
-                    <div class="row row-cols-2 row-cols-md-5 g-2 mb-4" id="kpi-container"></div>
-
-                    <!-- Charts Area -->
-                    <div class="card p-3 shadow-sm border-0 mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-bold mb-0"><i class="fa-solid fa-chart-bar me-2"></i>Grafik Performa</h6>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-primary px-3 fw-bold" onclick="saveReportToStorage()"><i class="fa-solid fa-floppy-disk me-1"></i> Simpan Laporan</button>
-                                <button class="btn btn-sm btn-success px-3 fw-bold" onclick="exportDashboardCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV Rekap</button>
-                            </div>
-                        </div>
-                        <div class="chart-container" style="position: relative; height:250px; width:100%">
-                            <canvas id="dashboardChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Dashboard Table -->
-                    <div class="card shadow-sm border-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-dark sticky-top">
-                                    <tr>
-                                        <th>Tanggal</th>
-                                        <th>Klik Meta</th>
-                                        <th>Klik Shopee</th>
-                                        <th>Produk</th>
-                                        <th>Spend</th>
-                                        <th>Komisi</th>
-                                        <th>Profit</th>
-                                        <th>ROI</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tableDashboardBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- SECTION: SAVED REPORTS -->
-                <section id="menu-savedreports" class="menu-section d-none">
-                    <div class="card shadow-sm border-0">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover align-middle mb-0">
-                                <thead class="table-dark sticky-top">
-                                    <tr>
-                                        <th>Tanggal</th>
-                                        <th>Klik Meta</th>
-                                        <th>Klik Shopee</th>
-                                        <th>Produk</th>
-                                        <th>Spend</th>
-                                        <th>Komisi</th>
-                                        <th>Profit</th>
-                                        <th>ROI</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tableSavedReportsBody">
-                                    <tr><td colspan="9" class="text-center text-muted">Belum ada laporan yang disimpan.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- SECTION: TAGLINK ANALYZE -->
-                <section id="menu-taglink" class="menu-section d-none">
-                    <div class="card p-3 shadow-sm border-0 mb-3">
-                        <div class="row align-items-center justify-content-between g-2">
-                            <div class="col-md-4">
-                                <input type="text" id="searchTagLink" class="form-control form-control-sm" placeholder="Cari Tag Link..." oninput="filterTagLink()">
-                            </div>
-                            <div class="col-md-auto">
-                                <button class="btn btn-sm btn-success fw-bold" onclick="exportTagLinkCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV TagLink</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card shadow-sm border-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-dark sticky-top">
-                                    <tr>
-                                        <th>Tanggal</th>
-                                        <th>Tag Link</th>
-                                        <th>Klik Meta</th>
-                                        <th>Klik Shopee</th>
-                                        <th>Produk</th>
-                                        <th>Spend</th>
-                                        <th>Komisi</th>
-                                        <th>Profit</th>
-                                        <th>ROI</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tableTagLinkBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- SECTION: ATRIBUSI -->
-                <section id="menu-atribusi" class="menu-section d-none">
-                    <div class="card p-2 shadow-sm border-0 mb-3 text-end">
-                        <div>
-                            <button class="btn btn-sm btn-success fw-bold" onclick="exportAtribusiCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV Atribusi</button>
-                        </div>
-                    </div>
-                    <div class="card shadow-sm border-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-dark sticky-top">
-                                    <tr>
-                                        <th>Tanggal</th>
-                                        <th>Tag Link</th>
-                                        <th>Campaign / Iklan</th>
-                                        <th>Klik Meta</th>
-                                        <th>Klik Shopee</th>
-                                        <th>Produk Terjual</th>
-                                        <th>Spend Meta</th>
-                                        <th>Komisi Shopee</th>
-                                        <th>Profit</th>
-                                        <th>ROI</th>
-                                        <th>ROAS</th>
-                                        <th>AVG Komisi / Order</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tableAtribusiBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-            </div>
-        </div>
     </div>
 
-    <!-- Modal Detail -->
-    <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h6 class="modal-title fw-bold" id="detailModalLabel">Detail Produk</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-0">
-                    <div class="table-responsive" style="max-height: 400px;">
-                        <table class="table table-striped table-hover mb-0" style="font-size: 11px;">
-                            <thead class="table-secondary sticky-top">
-                                <tr>
-                                    <th>Nama Produk</th>
-                                    <th>Jumlah Terjual</th>
-                                    <th>Komisi</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modalTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let globalData = { meta: [], webClick: [], affiliate: [], processed: { totals: {}, byTagLink: {} }, metaDate: "Nama file tidak valid" };
-        let activeChart = null;
+        // Kunci Data LocalStorage Terpisah
+        const REKAP_KEY = 'affiliate_saved_reports';
+        const ATRIBUSI_KEY = 'affiliate_attribution_reports';
 
-        document.getElementById('menu-toggle').addEventListener('click', function () {
-            document.getElementById('wrapper').classList.toggle('toggled');
-        });
-
-        window.addEventListener('DOMContentLoaded', () => {
-            renderSavedReportsTable();
-        });
-
-        function switchMenu(menuId) {
-            document.querySelectorAll('.menu-section').forEach(section => section.classList.add('d-none'));
-            document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => item.classList.remove('active'));
-            document.getElementById(`menu-${menuId}`).classList.remove('d-none');
+        // --- 1. LOGIKA PERPINDAHAN HALAMAN ---
+        function switchPage(pageId, btnId) {
+            // Sembunyikan semua halaman
+            document.getElementById('rekap-harian-page').style.display = 'none';
+            document.getElementById('attribution-rekap-page').style.display = 'none';
             
-            if(window.event && window.event.currentTarget && window.event.currentTarget.tagName === 'BUTTON') {
-                window.event.currentTarget.classList.add('active');
-            } else {
-                document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => {
-                    if(item.getAttribute('onclick').includes(menuId)) item.classList.add('active');
-                });
-            }
+            // Tampilkan halaman target
+            document.getElementById(pageId).style.display = 'block';
 
-            let title = menuId.charAt(0).toUpperCase() + menuId.slice(1);
-            if(menuId === 'taglink') title = "TagLink Analyze";
-            if(menuId === 'savedreports') title = "Saved Reports (Local Storage)";
-            document.getElementById('menu-title').innerText = title;
+            // Atur tombol aktif
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(btnId).classList.add('active');
+
+            // Render ulang data real-time saat halaman dibuka
+            if (pageId === 'rekap-harian-page') renderRekapTable();
+            if (pageId === 'attribution-rekap-page') renderAttributionTable();
         }
 
-        function showToast(message, isDanger = true) {
-            const toastEl = document.getElementById('liveToast');
-            if(isDanger) {
-                toastEl.classList.replace('bg-success', 'bg-danger');
-            } else {
-                toastEl.classList.replace('bg-danger', 'bg-success');
-            }
-            document.getElementById('toastMessage').innerText = message;
-            new bootstrap.Toast(toastEl).show();
-        }
+        // --- 2. MANAGEMENT DATABASE & RENDERING REKAP HARIAN ---
+        function renderRekapTable() {
+            const tbody = document.getElementById('rekapTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
 
-        function parseCSVFile(file, requiredHeaders) {
-            return new Promise((resolve, reject) => {
-                if (!file) return resolve([]);
-                Papa.parse(file, {
-                    header: true,
-                    skipEmptyLines: true,
-                    dynamicTyping: true,
-                    complete: function (results) {
-                        if (results.data.length > 0) {
-                            const headers = Object.keys(results.data[0]);
-                            const missing = requiredHeaders.filter(h => !headers.includes(h));
-                            if (missing.length > 0) {
-                                reject(`Format CSV tidak dikenali. Header Hilang: ${missing.join(', ')}`);
-                                return;
-                            }
-                        }
-                        resolve(results.data);
-                    },
-                    error: function () { reject("Format CSV tidak dikenali atau gagal membaca file."); }
-                });
-            });
-        }
-
-   function extractDateFromCommissionFilename(filename) {
-    const match = filename.match(/(\d{4})(\d{2})(\d{2})/);
-    if (match) {
-        const year = match[1];
-        const monthNumbers = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const monthIndex = parseInt(match[2]) - 1;
-        const month = monthNumbers[monthIndex] || match[2];
-        
-        // PENGURUTAN FIX: Memastikan tanggal selalu 2 digit (menambahkan angka 0 jika < 10)
-        let day = parseInt(match[3]);
-        let dayString = day < 10 ? '0' + day : day.toString();
-        
-        return `${dayString} ${month} ${year}`;
-    }
-    return "Nama file tidak valid";
-}
-
-        async function processCSV() {
-            const fileMeta = document.getElementById('fileMeta').files[0];
-            const fileWebClick = document.getElementById('fileWebClick').files[0];
-            const fileAffiliate = document.getElementById('fileAffiliate').files[0];
-
-            if (!fileAffiliate) {
-                showToast("Format CSV tidak dikenali. Harap pilih file Affiliate Commission terlebih dahulu.");
-                return;
-            }
-
-            document.getElementById('loadingSpinner').classList.remove('d-none');
-
+            let database = [];
             try {
-                globalData.metaDate = extractDateFromCommissionFilename(fileAffiliate.name);
-
-                // Meta Ads dan Web Click sekarang opsional (jika kosong diisi array [])
-                globalData.meta = fileMeta ? await parseCSVFile(fileMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']) : [];
-                globalData.webClick = fileWebClick ? await parseCSVFile(fileWebClick, ['Tag_link']) : [];
-                globalData.affiliate = await parseCSVFile(fileAffiliate, ['Tag_link1', 'Komisi Bersih Affiliate (Rp)', 'Nama Barange', 'Status Pesanan']);
-
-                aggregateData();
-                renderDashboard();
-                renderTagLinkTable();
-                renderAtribusiTable();
-                renderChart();
-                renderSavedReportsTable();
-                
-                switchMenu('dashboard');
-
-            } catch (error) {
-                console.error(error);
-                showToast(error);
-            } finally {
-                document.getElementById('loadingSpinner').classList.add('d-none');
-            }
-        }
-
-        function cleanNumber(val) {
-            if (val === undefined || val === null) return 0;
-            if (typeof val === 'number') return val;
-            let str = String(val).replace(/[^0-9.-]/g, '');
-            let parsed = parseFloat(str);
-            return isNaN(parsed) ? 0 : parsed;
-        }
-
-        function aggregateData() {
-            let dataset = {};
-
-            if (globalData.webClick && globalData.webClick.length > 0) {
-                globalData.webClick.forEach(row => {
-                    let rawTag = row['Tag_link'] || 'Unassigned';
-                    let tag = rawTag.replace(/-+$/, "").toLowerCase().trim();
-                    if (tag === '') return;
-
-                    if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag.replace(/-+$/, ""));
-                    dataset[tag].klikShopee += 1;
-                });
+                const isiStorage = localStorage.getItem(REKAP_KEY);
+                database = isiStorage ? JSON.parse(isiStorage) : [];
+            } catch (e) {
+                database = [];
             }
 
-            if (globalData.meta && globalData.meta.length > 0) {
-                globalData.meta.forEach(row => {
-                    let rawAdName = row['Nama iklan'] || 'Unknown';
-                    let adName = rawAdName.toLowerCase().trim();
-                    let hasilIndicator = row['Indikator Hasil'] || '';
-                    let isClick = hasilIndicator.toLowerCase().includes('actions:link_click');
-                    let clicks = isClick ? (parseInt(row['Hasil']) || 0) : 0;
-                    let spend = cleanNumber(row['Jumlah yang dibelanjakan (IDR)']);
+            // Urutkan Tanggal Terbaru di Atas
+            database.sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 
-                    let matched = false;
-                    for (let tag in dataset) {
-                        if (tag.includes(adName) || adName.includes(tag)) {
-                            dataset[tag].klikMeta += clicks;
-                            dataset[tag].spend += spend;
-                            if (!dataset[tag].campaigns.includes(rawAdName)) {
-                                dataset[tag].campaigns.push(rawAdName);
-                            }
-                            matched = true;
-                        }
-                    }
-
-                    if (!matched && adName !== '') {
-                        if (!dataset[adName]) dataset[adName] = createDataTemplate(rawAdName);
-                        dataset[adName].klikMeta += clicks;
-                        dataset[adName].spend += spend;
-                        if (!dataset[adName].campaigns.includes(rawAdName)) {
-                            dataset[adName].campaigns.push(rawAdName);
-                        }
-                    }
-                });
+            if (database.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">Belum ada data rekap harian.</td></tr>`;
+                return;
             }
 
-            globalData.affiliate.forEach(row => {
-                let rawTag = row['Tag_link1'] || 'Unassigned';
-                let tag = rawTag.toLowerCase().trim();
-                let komisi = cleanNumber(row['Komisi Bersih Affiliate (Rp)']);
-                let produkName = row['Nama Barange'] || 'Unknown';
-                let status = row['Status Pesanan'] || 'Completed';
-
-                if (tag === '') return;
-
-                if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag);
-                
-                dataset[tag].produkTerjual += 1;
-                dataset[tag].komisi += komisi;
-                
-                let existingProd = dataset[tag].productDetails.find(p => p.name === produkName);
-                if(existingProd) {
-                    existingProd.qty += 1;
-                    existingProd.komisi += komisi;
-                } else {
-                    dataset[tag].productDetails.push({ name: produkName, qty: 1, komisi: komisi, status: status });
-                }
+            database.forEach(item => {
+                const roiText = item.roi === null || item.roi === undefined ? '-' : item.roi + '%';
+                const row = `
+                    <tr>
+                        <td><b>${item.tanggal}</b></td>
+                        <td>${(item.klikMeta || 0).toLocaleString('id-ID')}</td>
+                        <td>${(item.klikShopee || 0).toLocaleString('id-ID')}</td>
+                        <td>${(item.produkTerjual || item.pesanan || 0).toLocaleString('id-ID')}</td>
+                        <td>Rp ${(item.spend || 0).toLocaleString('id-ID')}</td>
+                        <td>Rp ${(item.komisi || 0).toLocaleString('id-ID')}</td>
+                        <td style="color: ${item.profit >= 0 ? 'green' : 'red'}; font-weight: bold;">
+                            Rp ${(item.profit || 0).toLocaleString('id-ID')}
+                        </td>
+                        <td style="color: ${item.roi >= 0 ? 'green' : 'red'}; font-weight: bold;">${roiText}</td>
+                        <td>
+                            <button class="btn-danger" onclick="deleteRekapRow('${item.tanggal}')">Hapus</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
             });
-
-            let grandTotals = createDataTemplate('TOTAL REKAP');
-            for (let tag in dataset) {
-                let d = dataset[tag];
-                d.profit = d.komisi - d.spend;
-                d.roi = d.spend > 0 ? (d.profit / d.spend) * 100 : 0;
-                d.roas = d.spend > 0 ? (d.komisi / d.spend) : 0;
-                d.avgKomisi = d.produkTerjual > 0 ? (d.komisi / d.produkTerjual) : 0;
-
-                grandTotals.klikMeta += d.klikMeta;
-                grandTotals.klikShopee += d.klikShopee;
-                grandTotals.produkTerjual += d.produkTerjual;
-                grandTotals.spend += d.spend;
-                grandTotals.komisi += d.komisi;
-            }
-
-            grandTotals.profit = grandTotals.komisi - grandTotals.spend;
-            grandTotals.roi = grandTotals.spend > 0 ? (grandTotals.profit / grandTotals.spend) * 100 : 0;
-
-            globalData.processed.byTagLink = dataset;
-            globalData.processed.totals = grandTotals;
         }
 
-        function createDataTemplate(displayTag) {
-            return { displayTag: displayTag, klikMeta: 0, klikShopee: 0, produkTerjual: 0, spend: 0, komisi: 0, profit: 0, roi: 0, roas: 0, avgKomisi: 0, campaigns: [], productDetails: [] };
-        }
-
-        function formatIDR(num) {
-            return 'Rp ' + Math.round(num).toLocaleString('id-ID');
-        }
-
-        function renderDashboard() {
-            const totals = globalData.processed.totals;
-            const cpc = totals.klikMeta > 0 ? totals.spend / totals.klikMeta : 0;
-            const cvr = totals.klikShopee > 0 ? (totals.produkTerjual / totals.klikShopee) * 100 : 0;
-
-            document.getElementById('kpi-container').innerHTML = `
-                ${createKPICard('Spend Meta', formatIDR(totals.spend))}
-                ${createKPICard('Klik Meta', totals.klikMeta.toLocaleString('id-ID'))}
-                ${createKPICard('Klik Shopee', totals.klikShopee.toLocaleString('id-ID'))}
-                ${createKPICard('Produk Terjual', totals.produkTerjual.toLocaleString('id-ID'))}
-                ${createKPICard('Komisi Shopee', formatIDR(totals.komisi))}
-                ${createKPICard('Profit', formatIDR(totals.profit), totals.profit >= 0 ? 'text-success' : 'text-danger')}
-                ${createKPICard('ROI', totals.roi.toFixed(2) + '%')}
-                ${createKPICard('CPC', formatIDR(cpc))}
-                ${createKPICard('Conversion Rate', cvr.toFixed(2) + '%')}
-            `;
-
-            document.getElementById('tableDashboardBody').innerHTML = `
-                <tr>
-                    <td class="fw-bold text-orange">${globalData.metaDate}</td>
-                    <td>${totals.klikMeta.toLocaleString('id-ID')}</td>
-                    <td>${totals.klikShopee.toLocaleString('id-ID')}</td>
-                    <td>${totals.produkTerjual.toLocaleString('id-ID')}</td>
-                    <td>${formatIDR(totals.spend)}</td>
-                    <td>${formatIDR(totals.komisi)}</td>
-                    <td class="${totals.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(totals.profit)}</td>
-                    <td>${totals.roi.toFixed(2)}%</td>
-                </tr>
-            `;
-        }
-
-        function createKPICard(title, value, colorClass = '') {
-            return `
-                <div class="col">
-                    <div class="card p-2 bg-white shadow-sm h-100 kpi-card">
-                        <div class="text-muted" style="font-size:10px;">${title}</div>
-                        <div class="fw-bold fs-6 ${colorClass}">${value}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function saveReportToStorage() {
-            const totals = globalData.processed.totals;
-            if (!totals || totals.klikMeta === undefined) {
-                showToast("Belum ada data untuk disimpan. Silakan lakukan analisa CSV terlebih dahulu.");
-                return;
-            }
-
-            const targetDate = globalData.metaDate;
-            if (targetDate === "Nama file tidak valid") {
-                showToast("Gagal Menyimpan! Nama file Affiliate Commission CSV tidak mengandung format tanggal yang valid.", true);
-                return;
-            }
-
-            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
-
-            const isDuplicate = currentReports.some(report => report.tanggal === targetDate);
-            if (isDuplicate) {
-                showToast(`Laporan tanggal ${targetDate} sudah tersimpan.`, true);
-                return;
-            }
-
-            const newReport = {
-                tanggal: targetDate,
-                klikMeta: totals.klikMeta,
-                klikShopee: totals.klikShopee,
-                produkTerjual: totals.produkTerjual,
-                spend: totals.spend,
-                komisi: totals.komisi,
-                profit: totals.profit,
-                roi: totals.roi
-            };
-
-            currentReports.push(newReport);
-            localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
-            
-            renderSavedReportsTable();
-            showToast(`Laporan tanggal ${targetDate} berhasil disimpan!`, false);
-        }
-
-        function removeReport(dateStr) {
-            if (confirm(`Apakah Anda yakin ingin menghapus laporan ini?`)) {
-                let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
-                currentReports = currentReports.filter(r => r.tanggal !== dateStr);
-                localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
-                renderSavedReportsTable();
+        function deleteRekapRow(tanggal) {
+            if (confirm(`Hapus data rekap harian tanggal ${tanggal}?`)) {
+                let database = JSON.parse(localStorage.getItem(REKAP_KEY)) || [];
+                database = database.filter(item => item.tanggal !== tanggal);
+                localStorage.setItem(REKAP_KEY, JSON.stringify(database));
+                renderRekapTable();
             }
         }
 
-        function renderSavedReportsTable() {
-            const tbody = document.getElementById('tableSavedReportsBody');
-            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
 
-            if (currentReports.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">Belum ada laporan yang disimpan.</td></tr>`;
-                return;
-            }
-
-            currentReports.sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+        // --- 3. MANAGEMENT DATABASE & RENDERING REKAP ATRIBUSI ---
+        function renderAttributionTable() {
+            const tbody = document.getElementById('attributionTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
-            
-            let totalKlikMeta = 0;
-            let totalKlikShopee = 0;
-            let totalProdukTerjual = 0;
-            let totalSpend = 0;
-            let totalKomisi = 0;
-            let totalProfit = 0;
 
-            currentReports.forEach(report => {
-                totalKlikMeta += report.klikMeta || 0;
-                totalKlikShopee += report.klikShopee || 0;
-                totalProdukTerjual += report.produkTerjual || 0;
-                totalSpend += report.spend || 0;
-                totalKomisi += report.komisi || 0;
-                totalProfit += report.profit || 0;
-
-                let tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="fw-bold text-orange">${report.tanggal}</td>
-                    <td>${(report.klikMeta || 0).toLocaleString('id-ID')}</td>
-                    <td>${(report.klikShopee || 0).toLocaleString('id-ID')}</td>
-                    <td>${(report.produkTerjual || 0).toLocaleString('id-ID')}</td>
-                    <td>${formatIDR(report.spend || 0)}</td>
-                    <td>${formatIDR(report.komisi || 0)}</td>
-                    <td class="${(report.profit || 0) >= 0 ? 'text-success':'text-danger'}">${formatIDR(report.profit || 0)}</td>
-                    <td>${(report.roi || 0).toFixed(2)}%</td>
-                    <td>
-                        <button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeReport('${report.tanggal}')">
-                            <i class="fa-solid fa-trash-can me-1"></i> Hapus
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            let totalRoi = totalSpend > 0 ? (totalProfit / totalSpend) * 100 : 0;
-
-            let trTotal = document.createElement('tr');
-            trTotal.className = "table-secondary fw-bold border-top border-dark";
-            trTotal.innerHTML = `
-                <td class="text-dark"><i class="fa-solid fa-calculator me-1"></i> TOTAL REKAP</td>
-                <td>${totalKlikMeta.toLocaleString('id-ID')}</td>
-                <td>${totalKlikShopee.toLocaleString('id-ID')}</td>
-                <td>${totalProdukTerjual.toLocaleString('id-ID')}</td>
-                <td>${formatIDR(totalSpend)}</td>
-                <td>${formatIDR(totalKomisi)}</td>
-                <td class="${totalProfit >= 0 ? 'text-success':'text-danger'}">${formatIDR(totalProfit)}</td>
-                <td>${totalRoi.toFixed(2)}%</td>
-                <td></td>
-            `;
-            tbody.appendChild(trTotal);
-        }
-
-        function renderTagLinkTable(filterQuery = '') {
-            const tbody = document.getElementById('tableTagLinkBody');
-            tbody.innerHTML = '';
-            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
-            sortedList.sort((a, b) => b.komisi - a.komisi);
-
-            sortedList.forEach(item => {
-                if (filterQuery && !item.displayTag.toLowerCase().includes(filterQuery.toLowerCase())) return;
-                let tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${globalData.metaDate}</td>
-                    <td class="fw-bold text-primary">${item.displayTag}</td>
-                    <td>${item.klikMeta.toLocaleString('id-ID')}</td>
-                    <td>${item.klikShopee.toLocaleString('id-ID')}</td>
-                    <td>${item.produkTerjual.toLocaleString('id-ID')}</td>
-                    <td>${formatIDR(item.spend)}</td>
-                    <td>${formatIDR(item.komisi)}</td>
-                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(item.profit)}</td>
-                    <td>${item.roi.toFixed(2)}%</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function filterTagLink() {
-            renderTagLinkTable(document.getElementById('searchTagLink').value);
-        }
-
-        function renderAtribusiTable() {
-            const tbody = document.getElementById('tableAtribusiBody');
-            tbody.innerHTML = '';
-            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
-            sortedList.sort((a, b) => b.komisi - a.komisi);
-
-            sortedList.forEach((item, index) => {
-                let tr = document.createElement('tr');
-                let actionBtn = item.productDetails.length > 0 ? `<button class="btn btn-xs btn-outline-danger py-0 px-1" style="font-size:10px" onclick="showProductDetails('${item.displayTag.toLowerCase()}')"><i class="fa-solid fa-list"></i> Detail</button>` : '-';
-                tr.innerHTML = `
-                    <td>${globalData.metaDate}</td>
-                    <td class="fw-bold">${item.displayTag}</td>
-                    <td class="text-wrap" style="max-width:150px;">${item.campaigns.join(', ') || '-'}</td>
-                    <td>${item.klikMeta.toLocaleString('id-ID')}</td>
-                    <td>${item.klikShopee.toLocaleString('id-ID')}</td>
-                    <td>${item.produkTerjual.toLocaleString('id-ID')}</td>
-                    <td>${formatIDR(item.spend)}</td>
-                    <td>${formatIDR(item.komisi)}</td>
-                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(item.profit)}</td>
-                    <td>${item.roi.toFixed(2)}%</td>
-                    <td>${item.roas.toFixed(2)}</td>
-                    <td>${formatIDR(item.avgKomisi)}</td>
-                    <td>${actionBtn}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function showProductDetails(tagKey) {
-            const targetItem = globalData.processed.byTagLink[tagKey.trim()];
-            if(!targetItem) return;
-            
-            document.getElementById('detailModalLabel').innerText = `Detail Produk Breakdown — ${targetItem.displayTag}`;
-            let modalTbody = document.getElementById('modalTableBody');
-            modalTbody.innerHTML = '';
-            targetItem.productDetails.forEach(p => {
-                let r = document.createElement('tr');
-                r.innerHTML = `
-                    <td class="text-wrap">${p.name}</td>
-                    <td>${p.qty}</td>
-                    <td>${formatIDR(p.komisi)}</td>
-                    <td><span class="badge bg-success">${p.status}</span></td>
-                `;
-                modalTbody.appendChild(r);
-            });
-            new bootstrap.Modal(document.getElementById('detailModal')).show();
-        }
-
-        function renderChart() {
-            const ctx = document.getElementById('dashboardChart').getContext('2d');
-            if (activeChart) {
-                activeChart.destroy();
+            let database = [];
+            try {
+                const isiStorage = localStorage.getItem(ATRIBUSI_KEY);
+                database = isiStorage ? JSON.parse(isiStorage) : [];
+            } catch (e) {
+                database = [];
             }
-            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]).slice(0, 7);
-            activeChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: sortedList.map(i => i.displayTag),
-                    datasets: [
-                        { label: 'Spend', data: sortedList.map(i => i.spend), backgroundColor: '#0d6efd' },
-                        { label: 'Komisi', data: sortedList.map(i => i.komisi), backgroundColor: '#2dc574' },
-                        { label: 'Profit', data: sortedList.map(i => i.profit), backgroundColor: '#ffc107' }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { font: { size: 10 } } } },
-                    scales: { y: { ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } }
-                }
-            });
-        }
 
-        function downloadCSV(csvContent, filename) {
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            if (link.download !== undefined) {
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", filename);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        }
+            // Urutkan Tanggal Terbaru di Atas
+            database.sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 
-        function exportDashboardCSV() {
-            const totals = globalData.processed.totals;
-            if(!totals.klikMeta && totals.klikMeta !== 0) {
-                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
+            if (database.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">Belum ada data rekap atribusi taglink.</td></tr>`;
                 return;
             }
-            let csv = "Tanggal,Metrik Utama,Value\n";
-            csv += `${globalData.metaDate},Total Spend Meta,${Math.round(totals.spend)}\n`;
-            csv += `${globalData.metaDate},Total Klik Meta,${totals.klikMeta}\n`;
-            csv += `${globalData.metaDate},Total Klik Shopee,${totals.klikShopee}\n`;
-            csv += `${globalData.metaDate},Total Produk Terjual,${totals.produkTerjual}\n`;
-            csv += `${globalData.metaDate},Total Komisi Shopee,${Math.round(totals.komisi)}\n`;
-            csv += `${globalData.metaDate},Total Profit,${Math.round(totals.profit)}\n`;
-            csv += `${globalData.metaDate},ROI,${totals.roi.toFixed(2)}%\n`;
-            
-            downloadCSV(csv, `Rekap_Dashboard_Affiliate_${globalData.metaDate}.csv`);
-        }
 
-        function exportTagLinkCSV() {
-            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
-            if(sortedList.length === 0) {
-                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
-                return;
-            }
-            sortedList.sort((a, b) => b.komisi - a.komisi);
-
-            let csv = "Tanggal,Tag Link,Klik Meta,Klik Shopee,Produk,Spend,Komisi,Profit,ROI\n";
-            sortedList.forEach(item => {
-                csv += `${globalData.metaDate},"${item.displayTag}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roi.toFixed(2)}%\n`;
+            database.forEach(item => {
+                const roiText = item.roi === null || item.roi === undefined ? '-' : item.roi + '%';
+                const row = `
+                    <tr>
+                        <td><b>${item.tanggal}</b></td>
+                        <td>${(item.klikMeta || 0).toLocaleString('id-ID')}</td>
+                        <td>${(item.klikShopee || 0).toLocaleString('id-ID')}</td>
+                        <td>${(item.produkTerjual || 0).toLocaleString('id-ID')}</td>
+                        <td>Rp ${(item.spend || 0).toLocaleString('id-ID')}</td>
+                        <td>Rp ${(item.komisi || 0).toLocaleString('id-ID')}</td>
+                        <td style="color: ${item.profit >= 0 ? 'green' : 'red'}; font-weight: bold;">
+                            Rp ${(item.profit || 0).toLocaleString('id-ID')}
+                        </td>
+                        <td style="color: ${item.roi >= 0 ? 'green' : 'red'}; font-weight: bold;">${roiText}</td>
+                        <td>
+                            <button class="btn-danger" onclick="deleteAttributionRow('${item.tanggal}')">Hapus</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
             });
-
-            downloadCSV(csv, `Analisis_TagLink_Report_${globalData.metaDate}.csv`);
         }
 
-        function exportAtribusiCSV() {
-            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
-            if(sortedList.length === 0) {
-                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
-                return;
+        function deleteAttributionRow(tanggal) {
+            if (confirm(`Hapus data rekap atribusi tanggal ${tanggal}?`)) {
+                let database = JSON.parse(localStorage.getItem(ATRIBUSI_KEY)) || [];
+                database = database.filter(item => item.tanggal !== tanggal);
+                localStorage.setItem(ATRIBUSI_KEY, JSON.stringify(database));
+                renderAttributionTable();
             }
-            sortedList.sort((a, b) => b.komisi - a.komisi);
-
-            let csv = "Tanggal,Tag Link,Campaign / Iklan,Klik Meta,Klik Shopee,Produk Terjual,Spend Meta,Komisi Shopee,Profit,ROI,ROAS,AVG Komisi per Order\n";
-            sortedList.forEach(item => {
-                let camp = item.campaigns.join(' | ') || '-';
-                csv += `${globalData.metaDate},"${item.displayTag}","${camp}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roi.toFixed(2)}%,${item.roas.toFixed(2)},${Math.round(item.avgKomisi)}\n`;
-            });
-
-            downloadCSV(csv, `Laporan_Atribusi_Bisnis_${globalData.metaDate}.csv`);
         }
+
+        // --- 4. GLOBAL AUTO RUN SAAT HALAMAN DI-LOAD ---
+        document.addEventListener("DOMContentLoaded", function() {
+            renderRekapTable();
+            renderAttributionTable();
+        });
     </script>
 </body>
 </html>
