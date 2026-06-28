@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shopee Affiliate Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
@@ -65,6 +67,7 @@
 </head>
 <body>
 
+    <!-- Toast Notification -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11;">
         <div id="liveToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
@@ -75,6 +78,7 @@
     </div>
 
     <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
         <div class="bg-dark text-white" id="sidebar-wrapper">
             <div class="sidebar-heading text-center py-4 fs-6 fw-bold border-bottom border-secondary">
                 <i class="fa-solid fa-chart-line text-orange me-2"></i>Affiliate Dashboard
@@ -101,14 +105,18 @@
             </div>
         </div>
 
+        <!-- Page Content -->
         <div id="page-content-wrapper" class="w-100 bg-light">
+            <!-- Navbar -->
             <nav class="navbar navbar-expand-lg navbar-light bg-white py-2 px-4 border-bottom shadow-sm">
                 <button class="btn btn-outline-secondary btn-sm" id="menu-toggle"><i class="fa-solid fa-bars"></i></button>
                 <span class="navbar-brand ms-3 mb-0 h1 fs-6" id="menu-title">Upload CSV</span>
             </nav>
 
+            <!-- Main Content Container -->
             <div class="container-fluid px-4 py-3">
                 
+                <!-- Loading Spinner -->
                 <div id="loadingSpinner" class="d-none text-center my-5">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
@@ -116,6 +124,7 @@
                     <p class="mt-2 text-muted">Memproses data CSV...</p>
                 </div>
 
+                <!-- SECTION: UPLOAD CSV -->
                 <section id="menu-upload" class="menu-section">
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -142,9 +151,12 @@
                     </div>
                 </section>
 
+                <!-- SECTION: DASHBOARD -->
                 <section id="menu-dashboard" class="menu-section d-none">
+                    <!-- KPI Cards -->
                     <div class="row row-cols-2 row-cols-md-5 g-2 mb-4" id="kpi-container"></div>
 
+                    <!-- Charts Area -->
                     <div class="card p-3 shadow-sm border-0 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h6 class="fw-bold mb-0"><i class="fa-solid fa-chart-bar me-2"></i>Grafik Performa</h6>
@@ -158,6 +170,7 @@
                         </div>
                     </div>
 
+                    <!-- Dashboard Table -->
                     <div class="card shadow-sm border-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
@@ -179,6 +192,7 @@
                     </div>
                 </section>
 
+                <!-- SECTION: SAVED REPORTS -->
                 <section id="menu-savedreports" class="menu-section d-none">
                     <div class="card shadow-sm border-0">
                         <div class="table-responsive">
@@ -204,6 +218,7 @@
                     </div>
                 </section>
 
+                <!-- SECTION: TAGLINK ANALYZE -->
                 <section id="menu-taglink" class="menu-section d-none">
                     <div class="card p-3 shadow-sm border-0 mb-3">
                         <div class="row align-items-center justify-content-between g-2">
@@ -237,6 +252,7 @@
                     </div>
                 </section>
 
+                <!-- SECTION: ATRIBUSI -->
                 <section id="menu-atribusi" class="menu-section d-none">
                     <div class="card p-2 shadow-sm border-0 mb-3 text-end">
                         <div class="d-flex justify-content-end gap-2">
@@ -270,6 +286,7 @@
                     </div>
                 </section>
 
+                <!-- SECTION: REKAP ATRIBUSI -->
                 <section id="menu-rekapatribusi" class="menu-section d-none">
                     <div class="card shadow-sm border-0">
                         <div class="table-responsive">
@@ -299,6 +316,7 @@
         </div>
     </div>
 
+    <!-- Modal Detail Produk (Bawaan) -->
     <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -325,6 +343,34 @@
         </div>
     </div>
 
+    <!-- Modal Detail Taglink Rekap Atribusi (BARU) -->
+    <div class="modal fade" id="atribusiDetailModal" tabindex="-1" aria-labelledby="atribusiDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h6 class="modal-title fw-bold" id="atribusiDetailModalLabel">Breakdown Performa TagLink</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive" style="max-height: 450px;">
+                        <table class="table table-striped table-hover mb-0" style="font-size: 12px;">
+                            <thead class="table-secondary sticky-top">
+                                <tr>
+                                    <th>Tag Link</th>
+                                    <th>Klik Meta</th>
+                                    <th>Spend Meta</th>
+                                    <th>Komisi Shopee</th>
+                                </tr>
+                            </thead>
+                            <tbody id="atribusiModalTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -403,7 +449,6 @@
         const monthIndex = parseInt(match[2]) - 1;
         const month = monthNumbers[monthIndex] || match[2];
         
-        // PENGURUTAN FIX: Memastikan tanggal selalu 2 digit (menambahkan angka 0 jika < 10)
         let day = parseInt(match[3]);
         let dayString = day < 10 ? '0' + day : day.toString();
         
@@ -427,7 +472,6 @@
             try {
                 globalData.metaDate = extractDateFromCommissionFilename(fileAffiliate.name);
 
-                // Meta Ads dan Web Click sekarang opsional (jika kosong diisi array [])
                 globalData.meta = fileMeta ? await parseCSVFile(fileMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']) : [];
                 globalData.webClick = fileWebClick ? await parseCSVFile(fileWebClick, ['Tag_link']) : [];
                 globalData.affiliate = await parseCSVFile(fileAffiliate, ['Tag_link1', 'Komisi Bersih Affiliate (Rp)', 'Nama Barange', 'Status Pesanan']);
@@ -877,7 +921,7 @@
             downloadCSV(csv, `Laporan_Atribusi_Bisnis_${globalData.metaDate}.csv`);
         }
 
-        // --- ENGINE MANAGEMENT BARU KHUSUS REKAP ATRIBUSI ---
+        // --- ENGINE MANAGEMENT REKAP ATRIBUSI + BREAKDOWN DETAIL PER TAGLINK ---
         function saveAtribusiToStorage() {
             const totals = globalData.processed.totals;
             if (!totals || totals.klikMeta === undefined) {
@@ -899,6 +943,18 @@
                 return;
             }
 
+            // Ambil breakdown performa per taglink pada hari ini
+            let taglinkBreakdown = [];
+            for (let tag in globalData.processed.byTagLink) {
+                let item = globalData.processed.byTagLink[tag];
+                taglinkBreakdown.push({
+                    displayTag: item.displayTag,
+                    klikMeta: item.klikMeta,
+                    spend: item.spend,
+                    komisi: item.komisi
+                });
+            }
+
             const newReport = {
                 tanggal: targetDate,
                 klikMeta: totals.klikMeta,
@@ -907,7 +963,8 @@
                 spend: totals.spend,
                 komisi: totals.komisi,
                 profit: totals.profit,
-                roi: totals.roi
+                roi: totals.roi,
+                breakdown: taglinkBreakdown // Simpan struktur breakdown taglink
             };
 
             currentReports.push(newReport);
@@ -924,6 +981,36 @@
                 localStorage.setItem('affiliate_attribution_reports', JSON.stringify(currentReports));
                 renderRekapAtribusiTable();
             }
+        }
+
+        function showAtribusiDetail(dateStr) {
+            let currentReports = JSON.parse(localStorage.getItem('affiliate_attribution_reports')) || [];
+            let foundReport = currentReports.find(r => r.tanggal === dateStr);
+            
+            if(!foundReport || !foundReport.breakdown || foundReport.breakdown.length === 0) {
+                alert("Data breakdown rincian taglink tidak ditemukan untuk tanggal ini.");
+                return;
+            }
+
+            document.getElementById('atribusiDetailModalLabel').innerText = `Rincian Performa TagLink — Rekap ${dateStr}`;
+            let modalTbody = document.getElementById('atribusiModalTableBody');
+            modalTbody.innerHTML = '';
+
+            // Urutkan rincian berdasarkan komisi terbesar
+            let sortedBreakdown = [...foundReport.breakdown].sort((a, b) => b.komisi - a.komisi);
+
+            sortedBreakdown.forEach(item => {
+                let r = document.createElement('tr');
+                r.innerHTML = `
+                    <td class="fw-bold text-primary">${item.displayTag}</td>
+                    <td>${(item.klikMeta || 0).toLocaleString('id-ID')}</td>
+                    <td>${formatIDR(item.spend || 0)}</td>
+                    <td>${formatIDR(item.komisi || 0)}</td>
+                `;
+                modalTbody.appendChild(r);
+            });
+
+            new bootstrap.Modal(document.getElementById('atribusiDetailModal')).show();
         }
 
         function renderRekapAtribusiTable() {
@@ -965,9 +1052,14 @@
                     <td class="${(report.profit || 0) >= 0 ? 'text-success':'text-danger'}">${formatIDR(report.profit || 0)}</td>
                     <td>${(report.roi || 0).toFixed(2)}%</td>
                     <td>
-                        <button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeAtribusiReport('${report.tanggal}')">
-                            <i class="fa-solid fa-trash-can me-1"></i> Hapus
-                        </button>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="showAtribusiDetail('${report.tanggal}')">
+                                <i class="fa-solid fa-circle-info"></i> Detail
+                            </button>
+                            <button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeAtribusiReport('${report.tanggal}')">
+                                <i class="fa-solid fa-trash-can"></i> Hapus
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
