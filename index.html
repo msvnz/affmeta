@@ -61,7 +61,6 @@
             #sidebar-wrapper { margin-left: -220px; }
             #wrapper.toggled #sidebar-wrapper { margin-left: 0; }
         }
-        /* Style untuk inline breakdown dropdown ke bawah */
         .detail-row {
             background-color: #f1f3f5 !important;
         }
@@ -439,12 +438,27 @@
 
             if (globalData.webClick && globalData.webClick.length > 0) {
                 globalData.webClick.forEach(row => {
-                    let rawTag = row['Tag_link'] || 'Unassigned';
-                    let tag = rawTag.replace(/-+$/, "").toLowerCase().trim();
-                    if (tag === '') return;
+                    let rawTag = row['Tag_link'];
+                    let trafficSource = row['Perujuk'] || 'Direct / Unknown'; 
+                    let tag = '';
+                    
+                    if (rawTag === undefined || rawTag === null || String(rawTag).trim() === '') {
+                        tag = 'unassigned';
+                        rawTag = 'unassigned';
+                    } else {
+                        tag = String(rawTag).replace(/-+$/, "").toLowerCase().trim();
+                        if (tag === '') {
+                            tag = 'unassigned';
+                            rawTag = 'unassigned';
+                        }
+                    }
 
-                    if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag.replace(/-+$/, ""));
+                    if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag === 'unassigned' ? 'unassigned' : rawTag.replace(/-+$/, ""));
                     dataset[tag].klikShopee += 1;
+
+                    if (!dataset[tag].trafficSources.includes(trafficSource)) {
+                        dataset[tag].trafficSources.push(trafficSource);
+                    }
                 });
             }
 
@@ -459,6 +473,8 @@
 
                     let matched = false;
                     for (let tag in dataset) {
+                        if (tag === 'unassigned') continue;
+                        
                         if (tag.includes(adName) || adName.includes(tag)) {
                             dataset[tag].klikMeta += clicks;
                             dataset[tag].spend += spend;
@@ -481,13 +497,23 @@
             }
 
             globalData.affiliate.forEach(row => {
-                let rawTag = row['Tag_link1'] || 'Unassigned';
-                let tag = rawTag.toLowerCase().trim();
+                let rawTag = row['Tag_link1'];
+                let tag = '';
+                
+                if (rawTag === undefined || rawTag === null || String(rawTag).trim() === '') {
+                    tag = 'unassigned';
+                    rawTag = 'unassigned';
+                } else {
+                    tag = String(rawTag).toLowerCase().trim();
+                    if (tag === '') {
+                        tag = 'unassigned';
+                        rawTag = 'unassigned';
+                    }
+                }
+
                 let komisi = cleanNumber(row['Komisi Bersih Affiliate (Rp)']);
                 let produkName = row['Nama Barange'] || 'Unknown';
                 let status = row['Status Pesanan'] || 'Completed';
-
-                if (tag === '') return;
 
                 if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag);
                 
@@ -526,7 +552,21 @@
         }
 
         function createDataTemplate(displayTag) {
-            return { displayTag: displayTag, klikMeta: 0, klikShopee: 0, produkTerjual: 0, spend: 0, komisi: 0, profit: 0, roi: 0, roas: 0, avgKomisi: 0, campaigns: [], productDetails: [] };
+            return { 
+                displayTag: displayTag, 
+                klikMeta: 0, 
+                klikShopee: 0, 
+                produkTerjual: 0, 
+                spend: 0, 
+                komisi: 0, 
+                profit: 0, 
+                roi: 0, 
+                roas: 0, 
+                avgKomisi: 0, 
+                campaigns: [], 
+                productDetails: [],
+                trafficSources: [] 
+            };
         }
 
         function formatIDR(num) {
@@ -575,7 +615,6 @@
             `;
         }
 
-        // --- ENGINE MANAGEMENT SAVED REPORTS DENGAN INTEGRASI DROPDOWN ---
         function saveReportToStorage() {
             const totals = globalData.processed.totals;
             if (!totals || totals.klikMeta === undefined) {
@@ -597,7 +636,6 @@
                 return;
             }
 
-            // Simpan breakdown performa per taglink secara langsung di baris ini
             let taglinkBreakdown = [];
             for (let tag in globalData.processed.byTagLink) {
                 let item = globalData.processed.byTagLink[tag];
@@ -608,7 +646,8 @@
                     produkTerjual: item.produkTerjual,
                     spend: item.spend,
                     komisi: item.komisi,
-                    profit: item.profit
+                    profit: item.profit,
+                    trafficSources: item.trafficSources || []
                 });
             }
 
@@ -640,7 +679,6 @@
             }
         }
 
-        // Fungsi Toggle Dropdown Rincian Taglink Kebawah
         function toggleSavedReportDetailInline(dateStr, btnElement) {
             const safeId = "saved-detail-" + dateStr.replace(/\s+/g, '-');
             const existingRow = document.getElementById(safeId);
@@ -674,10 +712,12 @@
             sortedBreakdown.forEach(item => {
                 const itemProfit = item.profit !== undefined ? item.profit : (item.komisi - item.spend);
                 const profitColor = itemProfit >= 0 ? "text-success" : "text-danger";
+                const sourcesText = item.trafficSources && item.trafficSources.length > 0 ? item.trafficSources.join(', ') : '-';
                 
                 tableRowsHtml += `
                     <tr>
                         <td class="fw-bold text-primary">${item.displayTag}</td>
+                        <td class="text-wrap" style="max-width: 180px; font-size:11px;">${sourcesText}</td>
                         <td>${(item.klikMeta || 0).toLocaleString('id-ID')}</td>
                         <td>${(item.klikShopee || 0).toLocaleString('id-ID')}</td>
                         <td>${(item.produkTerjual || 0).toLocaleString('id-ID')}</td>
@@ -696,6 +736,7 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>Tag Link</th>
+                                    <th>Source Traffic (Perujuk)</th>
                                     <th>Klik Meta</th>
                                     <th>Klik Shopee</th>
                                     <th>Produk Terjual</th>
