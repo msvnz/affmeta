@@ -1,42 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ... (Bagian head tetap sama) ... -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shopee Affiliate Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ... (Bagian CSS tetap sama) ... */
-        body { font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow-x: hidden; background-color: #f8f9fa; }
+        body {
+            font-size: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+            background-color: #f8f9fa;
+        }
         #wrapper { overflow-x: hidden; }
-        #sidebar-wrapper { min-height: 100vh; width: 220px; transition: margin 0.25s ease-out; }
-        #sidebar-wrapper .sidebar-heading { font-size: 14px; letter-spacing: 0.5px; }
-        #sidebar-wrapper .list-group-item { font-size: 12px; padding: 12px 20px; border: none; transition: all 0.2s; cursor: pointer; }
-        #sidebar-wrapper .list-group-item:hover { background-color: rgba(255, 255, 255, 0.1) !important; color: #fff !important; }
-        #sidebar-wrapper .list-group-item.active { background-color: #ff5722 !important; color: #fff !important; font-weight: bold; }
+        #sidebar-wrapper {
+            min-height: 100vh;
+            width: 220px;
+            transition: margin 0.25s ease-out;
+        }
+        #sidebar-wrapper .sidebar-heading {
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        #sidebar-wrapper .list-group-item {
+            font-size: 12px;
+            padding: 12px 20px;
+            border: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        #sidebar-wrapper .list-group-item:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #fff !important;
+        }
+        #sidebar-wrapper .list-group-item.active {
+            background-color: #ff5722 !important;
+            color: #fff !important;
+            font-weight: bold;
+        }
         .text-orange { color: #ff5722; }
-        .table-responsive { max-height: 70vh; overflow-y: auto; }
-        table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-        table td { font-size: 12px; white-space: nowrap; }
+        .table-responsive {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        table th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        table td {
+            font-size: 12px;
+            white-space: nowrap;
+        }
         .card { border-radius: 6px; }
         .kpi-card { border-left: 4px solid #ff5722; }
         #wrapper.toggled #sidebar-wrapper { margin-left: -220px; }
-        @media (max-width: 768px) { #sidebar-wrapper { margin-left: -220px; } #wrapper.toggled #sidebar-wrapper { margin-left: 0; } }
-        .detail-row { background-color: #f1f3f5 !important; }
-        .detail-table-container { padding: 10px 20px; background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 4px; }
+        @media (max-width: 768px) {
+            #sidebar-wrapper { margin-left: -220px; }
+            #wrapper.toggled #sidebar-wrapper { margin-left: 0; }
+        }
+        .detail-row {
+            background-color: #f1f3f5 !important;
+        }
+        .detail-table-container {
+            padding: 10px 20px;
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
-    <!-- ... (Struktur HTML body tetap sama, hanya bagian script yang diubah) ... -->
+
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11;">
-        <!-- ... -->
+        <div id="liveToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage">Error message here.</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
     </div>
+
     <div class="d-flex" id="wrapper">
-        <!-- ... -->
+        <div class="bg-dark text-white" id="sidebar-wrapper">
+            <div class="sidebar-heading text-center py-4 fs-6 fw-bold border-bottom border-secondary">
+                <i class="fa-solid fa-chart-line text-orange me-2"></i>Affiliate Dashboard
+            </div>
+            <div class="list-group list-group-flush my-3">
+                <button class="list-group-item list-group-item-action bg-transparent text-white active" onclick="switchMenu('upload')">
+                    <i class="fa-solid fa-upload me-2"></i>Upload CSV
+                </button>
+                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('dashboard')">
+                    <i class="fa-solid fa-chart-pie me-2"></i>Dashboard
+                </button>
+                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('savedreports')">
+                    <i class="fa-solid fa-database me-2"></i>Saved Reports
+                </button>
+                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('taglink')">
+                    <i class="fa-solid fa-tags me-2"></i>TagLink Analyze
+                </button>
+                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('atribusi')">
+                    <i class="fa-solid fa-bullseye me-2"></i>Atribusi
+                </button>
+            </div>
+        </div>
+
+        <div id="page-content-wrapper" class="w-100 bg-light">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white py-2 px-4 border-bottom shadow-sm">
+                <button class="btn btn-outline-secondary btn-sm" id="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+                <span class="navbar-brand ms-3 mb-0 h1 fs-6" id="menu-title">Upload CSV</span>
+            </nav>
+
+            <div class="container-fluid px-4 py-3">
+                
+                <div id="loadingSpinner" class="d-none text-center my-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Memproses data CSV...</p>
+                </div>
+
+                <section id="menu-upload" class="menu-section">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="card p-3 shadow-sm border-0">
+                                <label class="form-label fw-bold"><i class="fa-brands fa-facebook text-primary me-1"></i> Meta Ads CSV <span class="text-muted fw-normal">(Opsional)</span></label>
+                                <input type="file" id="fileMeta" class="form-control form-control-sm" accept=".csv">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-3 shadow-sm border-0">
+                                <label class="form-label fw-bold"><i class="fa-solid fa-globe text-success me-1"></i> Website Click Report CSV <span class="text-muted fw-normal">(Opsional)</span></label>
+                                <input type="file" id="fileWebClick" class="form-control form-control-sm" accept=".csv">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-3 shadow-sm border-0">
+                                <label class="form-label fw-bold"><i class="fa-solid fa-bag-shopping text-danger me-1"></i> Affiliate Commission CSV <span class="text-danger">*</span></label>
+                                <input type="file" id="fileAffiliate" class="form-control form-control-sm" accept=".csv">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-4">
+                        <button class="btn btn-primary px-5 fw-bold btn-sm shadow-sm" onclick="processCSV()">ANALISA</button>
+                    </div>
+                </section>
+
+                <section id="menu-dashboard" class="menu-section d-none">
+                    <div class="row row-cols-2 row-cols-md-5 g-2 mb-4" id="kpi-container"></div>
+
+                    <div class="card p-3 shadow-sm border-0 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0"><i class="fa-solid fa-chart-bar me-2"></i>Grafik Performa</h6>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-primary px-3 fw-bold" onclick="saveReportToStorage()"><i class="fa-solid fa-floppy-disk me-1"></i> Simpan Laporan</button>
+                                <button class="btn btn-sm btn-success px-3 fw-bold" onclick="exportDashboardCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV Rekap</button>
+                            </div>
+                        </div>
+                        <div class="chart-container" style="position: relative; height:250px; width:100%">
+                            <canvas id="dashboardChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm border-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Klik Meta</th>
+                                        <th>Klik Shopee</th>
+                                        <th class="col-pesanan">Pesanan</th>
+                                        <th>Spend</th>
+                                        <th>Komisi</th>
+                                        <th>Profit</th>
+                                        <th>ROI</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableDashboardBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="menu-savedreports" class="menu-section d-none">
+                    <div class="card shadow-sm border-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Klik Meta</th>
+                                        <th>Klik Shopee</th>
+                                        <th class="col-pesanan">Pesanan</th>
+                                        <th>Spend</th>
+                                        <th>Komisi</th>
+                                        <th>Profit</th>
+                                        <th>ROI</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableSavedReportsBody">
+                                    <tr><td colspan="9" class="text-center text-muted">Belum ada laporan yang disimpan.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="menu-taglink" class="menu-section d-none">
+                    <div class="card p-3 shadow-sm border-0 mb-3">
+                        <div class="row align-items-center justify-content-between g-2">
+                            <div class="col-md-4">
+                                <input type="text" id="searchTagLink" class="form-control form-control-sm" placeholder="Cari Tag Link..." oninput="filterTagLink()">
+                            </div>
+                            <div class="col-md-auto">
+                                <button class="btn btn-sm btn-success fw-bold" onclick="exportTagLinkCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV TagLink</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm border-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Tag Link</th>
+                                        <th>Klik Meta</th>
+                                        <th>Klik Shopee</th>
+                                        <th class="col-pesanan">Pesanan</th>
+                                        <th>Spend</th>
+                                        <th>Komisi</th>
+                                        <th>Profit</th>
+                                        <th>ROI</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableTagLinkBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="menu-atribusi" class="menu-section d-none">
+                    <div class="card p-2 shadow-sm border-0 mb-3 text-end">
+                        <div class="d-flex justify-content-end gap-2">
+                            <button class="btn btn-sm btn-success fw-bold" onclick="exportAtribusiCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV Atribusi</button>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm border-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Tag Link</th>
+                                        <th>Campaign / Iklan</th>
+                                        <th>Klik Meta</th>
+                                        <th>Klik Shopee</th>
+                                        <th class="col-pesanan">Pesanan</th>
+                                        <th>Spend Meta</th>
+                                        <th>Komisi Shopee</th>
+                                        <th>Profit</th>
+                                        <th>ROI</th>
+                                        <th>ROAS</th>
+                                        <th>AVG Komisi / Order</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableAtribusiBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
     </div>
-    
+
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold" id="detailModalLabel">Detail Produk</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-striped table-hover mb-0" style="font-size: 11px;">
+                            <thead class="table-secondary sticky-top">
+                                <tr>
+                                    <th>Nama Produk</th>
+                                    <th>Qty (Baris Data)</th>
+                                    <th>Komisi</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -44,15 +312,19 @@
         let globalData = { meta: [], webClick: [], affiliate: [], processed: { totals: {}, byTagLink: {} }, metaDate: "Nama file tidak valid" };
         let activeChart = null;
 
-        // ... (Fungsi UI dan utilitas tetap sama: menu-toggle, switchMenu, showToast, parseCSVFile, extractDateFromCommissionFilename, cleanNumber) ...
+        document.getElementById('menu-toggle').addEventListener('click', function () {
+            document.getElementById('wrapper').classList.toggle('toggled');
+        });
 
-        document.getElementById('menu-toggle').addEventListener('click', function () { document.getElementById('wrapper').classList.toggle('toggled'); });
-        window.addEventListener('DOMContentLoaded', () => { renderSavedReportsTable(); });
+        window.addEventListener('DOMContentLoaded', () => {
+            renderSavedReportsTable();
+        });
 
         function switchMenu(menuId) {
             document.querySelectorAll('.menu-section').forEach(section => section.classList.add('d-none'));
             document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => item.classList.remove('active'));
             document.getElementById(`menu-${menuId}`).classList.remove('d-none');
+            
             if(window.event && window.event.currentTarget && window.event.currentTarget.tagName === 'BUTTON') {
                 window.event.currentTarget.classList.add('active');
             } else {
@@ -60,16 +332,20 @@
                     if(item.getAttribute('onclick').includes(menuId)) item.classList.add('active');
                 });
             }
+
             let title = menuId.charAt(0).toUpperCase() + menuId.slice(1);
             if(menuId === 'taglink') title = "TagLink Analyze";
-            if(menuId === 'savedreports') title = "Saved Reports (Local Storage)";
+            if(menuId === 'savedreports') title = "Saved Reports";
             document.getElementById('menu-title').innerText = title;
         }
 
         function showToast(message, isDanger = true) {
             const toastEl = document.getElementById('liveToast');
-            if(isDanger) { toastEl.classList.replace('bg-success', 'bg-danger'); } 
-            else { toastEl.classList.replace('bg-danger', 'bg-success'); }
+            if(isDanger) {
+                toastEl.classList.replace('bg-success', 'bg-danger');
+            } else {
+                toastEl.classList.replace('bg-danger', 'bg-success');
+            }
             document.getElementById('toastMessage').innerText = message;
             new bootstrap.Toast(toastEl).show();
         }
@@ -78,12 +354,14 @@
             return new Promise((resolve, reject) => {
                 if (!file) return resolve([]);
                 Papa.parse(file, {
-                    header: true, skipEmptyLines: true, dynamicTyping: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    dynamicTyping: true,
                     complete: function (results) {
                         if (results.data.length > 0) {
                             const headers = Object.keys(results.data[0]);
                             const missing = requiredHeaders.filter(h => !headers.includes(h));
-                            // Perubahan 1: Hapus requirement header Tag_link1 secara hardcode karena sekarang kita mencari Tag_link1 sampai 5
+                            // Hapus filter Tag_link1 karena kita cek Tag_link1 sampai 5
                             const isAffiliate = requiredHeaders.includes('Komisi Bersih Affiliate (Rp)');
                             if (missing.length > 0 && !isAffiliate) {
                                 reject(`Format CSV tidak dikenali. Header Hilang: ${missing.join(', ')}`);
@@ -97,26 +375,20 @@
             });
         }
 
-        function extractDateFromCommissionFilename(filename) { /* ... sama ... */ 
+        function extractDateFromCommissionFilename(filename) {
             const match = filename.match(/(\d{4})(\d{2})(\d{2})/);
             if (match) {
                 const year = match[1];
                 const monthNumbers = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                 const monthIndex = parseInt(match[2]) - 1;
                 const month = monthNumbers[monthIndex] || match[2];
+                
                 let day = parseInt(match[3]);
                 let dayString = day < 10 ? '0' + day : day.toString();
+                
                 return `${dayString} ${month} ${year}`;
             }
             return "Nama file tidak valid";
-        }
-        
-        function cleanNumber(val) { /* ... sama ... */ 
-            if (val === undefined || val === null) return 0;
-            if (typeof val === 'number') return val;
-            let str = String(val).replace(/[^0-9.-]/g, '');
-            let parsed = parseFloat(str);
-            return isNaN(parsed) ? 0 : parsed;
         }
 
         async function processCSV() {
@@ -133,17 +405,14 @@
 
             try {
                 globalData.metaDate = extractDateFromCommissionFilename(fileAffiliate.name);
+
                 globalData.meta = fileMeta ? await parseCSVFile(fileMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']) : [];
                 globalData.webClick = fileWebClick ? await parseCSVFile(fileWebClick, ['Tag_link']) : [];
                 
-                // Perubahan 2: Menambahkan 'ID Pemesanan' ke dalam list pengecekan untuk menghitung jumlah pesanan
+                // Tambahkan 'ID Pemesanan' pada required header pengecekan file Affiliate
                 globalData.affiliate = await parseCSVFile(fileAffiliate, ['ID Pemesanan', 'Komisi Bersih Affiliate (Rp)', 'Nama Barange', 'Status Pesanan']);
 
                 aggregateData();
-                
-                // Perbarui Header Tabel dari "Produk Terjual" menjadi "Pesanan"
-                updateTableHeadersToOrders();
-
                 renderDashboard();
                 renderTagLinkTable();
                 renderAtribusiTable();
@@ -160,19 +429,17 @@
             }
         }
 
-        function updateTableHeadersToOrders() {
-            // Ubah teks header pada tabel agar sesuai dengan "Jumlah Pesanan"
-            const thElements = document.querySelectorAll('th');
-            thElements.forEach(th => {
-                if (th.innerText === 'Produk') th.innerText = 'Pesanan';
-                if (th.innerText === 'Produk Terjual') th.innerText = 'Total Pesanan';
-            });
+        function cleanNumber(val) {
+            if (val === undefined || val === null) return 0;
+            if (typeof val === 'number') return val;
+            let str = String(val).replace(/[^0-9.-]/g, '');
+            let parsed = parseFloat(str);
+            return isNaN(parsed) ? 0 : parsed;
         }
 
         function aggregateData() {
             let dataset = {};
 
-            // 1. Data Web Click
             if (globalData.webClick && globalData.webClick.length > 0) {
                 globalData.webClick.forEach(row => {
                     let rawTag = row['Tag_link'];
@@ -184,7 +451,10 @@
                         rawTag = 'unassigned';
                     } else {
                         tag = String(rawTag).replace(/-+$/, "").toLowerCase().trim();
-                        if (tag === '') { tag = 'unassigned'; rawTag = 'unassigned'; }
+                        if (tag === '') {
+                            tag = 'unassigned';
+                            rawTag = 'unassigned';
+                        }
                     }
 
                     if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag === 'unassigned' ? 'unassigned' : rawTag.replace(/-+$/, ""));
@@ -196,7 +466,6 @@
                 });
             }
 
-            // 2. Data Meta Ads
             if (globalData.meta && globalData.meta.length > 0) {
                 globalData.meta.forEach(row => {
                     let rawAdName = row['Nama iklan'] || 'Unknown';
@@ -231,12 +500,10 @@
                 });
             }
 
-            // 3. Data Affiliate (Perubahan Utama)
-            let processedOrderIdsByTag = {}; // Untuk melacak ID pesanan unik per tag
-            let totalUniqueOrdersTracker = new Set(); // Melacak total semua pesanan unik
+            let processedOrderIdsByTag = {};
+            let totalUniqueOrdersTracker = new Set();
 
             globalData.affiliate.forEach(row => {
-                // Perubahan 3: Logika menggabungkan Tag_link1 sampai Tag_link5
                 let tagList = [];
                 const tagColumns = ['Tag_link1', 'Tag_link2', 'Tag_link3', 'Tag_link4', 'Tag_link5'];
                 
@@ -255,25 +522,24 @@
                 let komisi = cleanNumber(row['Komisi Bersih Affiliate (Rp)']);
                 let produkName = row['Nama Barange'] || 'Unknown';
                 let status = row['Status Pesanan'] || 'Completed';
-                let orderId = row['ID Pemesanan'] || 'Unknown-' + Math.random(); // Perubahan 4: Ambil ID Pemesanan
+                let orderId = row['ID Pemesanan'] || 'Unknown-' + Math.random();
 
                 if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag);
                 if (!processedOrderIdsByTag[tag]) processedOrderIdsByTag[tag] = new Set();
                 
                 dataset[tag].komisi += komisi;
                 
-                // Perubahan 5: Hitung Jumlah Pesanan berdasarkan ID Pemesanan yang unik
+                // Menghitung Jumlah Pesanan Unik
                 if (!processedOrderIdsByTag[tag].has(orderId)) {
                     processedOrderIdsByTag[tag].add(orderId);
-                    dataset[tag].produkTerjual += 1; // Disini 'produkTerjual' sekarang berfungsi sebagai 'Jumlah Pesanan'
+                    dataset[tag].produkTerjual += 1; // Sekarang variabel ini mencatat Pesanan, bukan baris produk
                 }
                 
-                totalUniqueOrdersTracker.add(orderId); // Track untuk grand total
-                
-                // Rincian produk tetap dihitung per baris untuk modal detail
+                totalUniqueOrdersTracker.add(orderId);
+
                 let existingProd = dataset[tag].productDetails.find(p => p.name === produkName);
                 if(existingProd) {
-                    existingProd.qty += 1;
+                    existingProd.qty += 1; // qty mencatat baris data produk (produk item)
                     existingProd.komisi += komisi;
                 } else {
                     dataset[tag].productDetails.push({ name: produkName, qty: 1, komisi: komisi, status: status });
@@ -281,9 +547,6 @@
             });
 
             let grandTotals = createDataTemplate('TOTAL REKAP');
-            
-            // Grand Total Pesanan diambil dari Set global agar tidak double count pesanan yang sama di tag yang berbeda (jika ada skenario aneh)
-            // Namun, umumnya 1 pesanan = 1 tag.
             grandTotals.produkTerjual = totalUniqueOrdersTracker.size;
 
             for (let tag in dataset) {
@@ -291,11 +554,10 @@
                 d.profit = d.komisi - d.spend;
                 d.roi = d.spend > 0 ? (d.profit / d.spend) * 100 : 0;
                 d.roas = d.spend > 0 ? (d.komisi / d.spend) : 0;
-                d.avgKomisi = d.produkTerjual > 0 ? (d.komisi / d.produkTerjual) : 0; // Avg per pesanan
+                d.avgKomisi = d.produkTerjual > 0 ? (d.komisi / d.produkTerjual) : 0;
 
                 grandTotals.klikMeta += d.klikMeta;
                 grandTotals.klikShopee += d.klikShopee;
-                // grandTotals.produkTerjual += d.produkTerjual; (Sudah dihitung via Set diatas)
                 grandTotals.spend += d.spend;
                 grandTotals.komisi += d.komisi;
             }
@@ -310,28 +572,35 @@
         function createDataTemplate(displayTag) {
             return { 
                 displayTag: displayTag, 
-                klikMeta: 0, klikShopee: 0, produkTerjual: 0, // 'produkTerjual' sekarang artinya Jumlah Pesanan
-                spend: 0, komisi: 0, profit: 0, roi: 0, roas: 0, avgKomisi: 0, 
-                campaigns: [], productDetails: [], trafficSources: [] 
+                klikMeta: 0, 
+                klikShopee: 0, 
+                produkTerjual: 0, // Merupakan 'Jumlah Pesanan'
+                spend: 0, 
+                komisi: 0, 
+                profit: 0, 
+                roi: 0, 
+                roas: 0, 
+                avgKomisi: 0, 
+                campaigns: [], 
+                productDetails: [],
+                trafficSources: [] 
             };
         }
 
-        // ... (Fungsi render UI lainnya seperti renderDashboard, formatIDR, dll tidak perlu banyak diubah 
-        // karena kita mengakali 'produkTerjual' agar berisi jumlah pesanan) ...
-        
-        function formatIDR(num) { return 'Rp ' + Math.round(num).toLocaleString('id-ID'); }
+        function formatIDR(num) {
+            return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+        }
 
         function renderDashboard() {
             const totals = globalData.processed.totals;
             const cpc = totals.klikMeta > 0 ? totals.spend / totals.klikMeta : 0;
             const cvr = totals.klikShopee > 0 ? (totals.produkTerjual / totals.klikShopee) * 100 : 0;
 
-            // Perubahan teks 'Produk Terjual' menjadi 'Total Pesanan'
             document.getElementById('kpi-container').innerHTML = `
                 ${createKPICard('Spend Meta', formatIDR(totals.spend))}
                 ${createKPICard('Klik Meta', totals.klikMeta.toLocaleString('id-ID'))}
                 ${createKPICard('Klik Shopee', totals.klikShopee.toLocaleString('id-ID'))}
-                ${createKPICard('Total Pesanan', totals.produkTerjual.toLocaleString('id-ID'))} 
+                ${createKPICard('Total Pesanan', totals.produkTerjual.toLocaleString('id-ID'))}
                 ${createKPICard('Komisi Shopee', formatIDR(totals.komisi))}
                 ${createKPICard('Profit', formatIDR(totals.profit), totals.profit >= 0 ? 'text-success' : 'text-danger')}
                 ${createKPICard('ROI', totals.roi.toFixed(2) + '%')}
@@ -353,16 +622,393 @@
             `;
         }
 
-        function createKPICard(title, value, colorClass = '') { /* ... sama ... */ 
-            return `<div class="col"><div class="card p-2 bg-white shadow-sm h-100 kpi-card"><div class="text-muted" style="font-size:10px;">${title}</div><div class="fw-bold fs-6 ${colorClass}">${value}</div></div></div>`;
+        function createKPICard(title, value, colorClass = '') {
+            return `
+                <div class="col">
+                    <div class="card p-2 bg-white shadow-sm h-100 kpi-card">
+                        <div class="text-muted" style="font-size:10px;">${title}</div>
+                        <div class="fw-bold fs-6 ${colorClass}">${value}</div>
+                    </div>
+                </div>
+            `;
         }
-        
-        // ... (Biarkan fungsi save, chart, render tabel yang lainnya ada di bawah ini. Saya hanya memotong 
-        // bagian atas karena perubahan utamanya ada pada aggregateData() dan proses parseCSV) ...
-        
-        // Copy fungsi renderTagLinkTable, renderAtribusiTable, saveReportToStorage dsb secara utuh dari kode asal Anda
-        // dan gantilah header "Produk Terjual" / "Produk" menjadi "Pesanan" pada export CSV jika diperlukan.
 
+        function saveReportToStorage() {
+            const totals = globalData.processed.totals;
+            if (!totals || totals.klikMeta === undefined) {
+                showToast("Belum ada data untuk disimpan. Silakan lakukan analisa CSV terlebih dahulu.");
+                return;
+            }
+
+            const targetDate = globalData.metaDate;
+            if (targetDate === "Nama file tidak valid") {
+                showToast("Gagal Menyimpan! Nama file Affiliate Commission CSV tidak mengandung format tanggal yang valid.", true);
+                return;
+            }
+
+            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+
+            const isDuplicate = currentReports.some(report => report.tanggal === targetDate);
+            if (isDuplicate) {
+                showToast(`Laporan tanggal ${targetDate} sudah tersimpan.`, true);
+                return;
+            }
+
+            let taglinkBreakdown = [];
+            for (let tag in globalData.processed.byTagLink) {
+                let item = globalData.processed.byTagLink[tag];
+                taglinkBreakdown.push({
+                    displayTag: item.displayTag,
+                    klikMeta: item.klikMeta,
+                    klikShopee: item.klikShopee,
+                    produkTerjual: item.produkTerjual,
+                    spend: item.spend,
+                    komisi: item.komisi,
+                    profit: item.profit,
+                    trafficSources: item.trafficSources || []
+                });
+            }
+
+            const newReport = {
+                tanggal: targetDate,
+                klikMeta: totals.klikMeta,
+                klikShopee: totals.klikShopee,
+                produkTerjual: totals.produkTerjual,
+                spend: totals.spend,
+                komisi: totals.komisi,
+                profit: totals.profit,
+                roi: totals.roi,
+                breakdown: taglinkBreakdown
+            };
+
+            currentReports.push(newReport);
+            localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
+            
+            renderSavedReportsTable();
+            showToast(`Laporan tanggal ${targetDate} berhasil disimpan!`, false);
+        }
+
+        function removeReport(dateStr) {
+            if (confirm(`Apakah Anda yakin ingin menghapus laporan ini?`)) {
+                let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+                currentReports = currentReports.filter(r => r.tanggal !== dateStr);
+                localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
+                renderSavedReportsTable();
+            }
+        }
+
+        function toggleSavedReportDetailInline(dateStr, btnElement) {
+            const safeId = "saved-detail-" + dateStr.replace(/\s+/g, '-');
+            const existingRow = document.getElementById(safeId);
+
+            if (existingRow) {
+                existingRow.remove();
+                btnElement.innerHTML = `<i class="fa-solid fa-chevron-down"></i> Detail`;
+                btnElement.classList.replace('btn-primary', 'btn-outline-primary');
+                return;
+            }
+
+            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            let foundReport = currentReports.find(r => r.tanggal === dateStr);
+            
+            if(!foundReport || !foundReport.breakdown || foundReport.breakdown.length === 0) {
+                alert("Data rincian taglink tidak tersedia untuk laporan ini.");
+                return;
+            }
+
+            btnElement.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Tutup`;
+            btnElement.classList.replace('btn-outline-primary', 'btn-primary');
+
+            const parentRow = btnElement.closest('tr');
+            const detailRow = document.createElement('tr');
+            detailRow.id = safeId;
+            detailRow.className = "detail-row";
+
+            let sortedBreakdown = [...foundReport.breakdown].sort((a, b) => b.komisi - a.komisi);
+            
+            let tableRowsHtml = "";
+            sortedBreakdown.forEach(item => {
+                const itemProfit = item.profit !== undefined ? item.profit : (item.komisi - item.spend);
+                const profitColor = itemProfit >= 0 ? "text-success" : "text-danger";
+                const sourcesText = item.trafficSources && item.trafficSources.length > 0 ? item.trafficSources.join(', ') : '-';
+                
+                tableRowsHtml += `
+                    <tr>
+                        <td class="fw-bold text-primary">${item.displayTag}</td>
+                        <td class="text-wrap" style="max-width: 180px; font-size:11px;">${sourcesText}</td>
+                        <td>${(item.klikMeta || 0).toLocaleString('id-ID')}</td>
+                        <td>${(item.klikShopee || 0).toLocaleString('id-ID')}</td>
+                        <td>${(item.produkTerjual || 0).toLocaleString('id-ID')}</td>
+                        <td>${formatIDR(item.spend || 0)}</td>
+                        <td>${formatIDR(item.komisi || 0)}</td>
+                        <td class="fw-bold ${profitColor}">${formatIDR(itemProfit)}</td>
+                    </tr>
+                `;
+            });
+
+            detailRow.innerHTML = `
+                <td colspan="9" class="p-3">
+                    <div class="detail-table-container shadow-sm">
+                        <div class="fw-bold text-dark mb-2"><i class="fa-solid fa-tags me-1"></i> Rincian Performa TagLink — Laporan ${dateStr}</div>
+                        <table class="table table-sm table-striped table-bordered mb-0 bg-white" style="font-size: 11px;">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Tag Link</th>
+                                    <th>Source Traffic (Perujuk)</th>
+                                    <th>Klik Meta</th>
+                                    <th>Klik Shopee</th>
+                                    <th>Pesanan</th>
+                                    <th>Spend Meta</th>
+                                    <th>Komisi Shopee</th>
+                                    <th>Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            `;
+
+            parentRow.parentNode.insertBefore(detailRow, parentRow.nextSibling);
+        }
+
+        function renderSavedReportsTable() {
+            const tbody = document.getElementById('tableSavedReportsBody');
+            if(!tbody) return;
+            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+
+            if (currentReports.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">Belum ada laporan yang disimpan.</td></tr>`;
+                return;
+            }
+
+            currentReports.sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+            tbody.innerHTML = '';
+            
+            let totalKlikMeta = 0;
+            let totalKlikShopee = 0;
+            let totalProdukTerjual = 0;
+            let totalSpend = 0;
+            let totalKomisi = 0;
+            let totalProfit = 0;
+
+            currentReports.forEach(report => {
+                totalKlikMeta += report.klikMeta || 0;
+                totalKlikShopee += report.klikShopee || 0;
+                totalProdukTerjual += report.produkTerjual || 0;
+                totalSpend += report.spend || 0;
+                totalKomisi += report.komisi || 0;
+                totalProfit += report.profit || 0;
+
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="fw-bold text-orange">${report.tanggal}</td>
+                    <td>${(report.klikMeta || 0).toLocaleString('id-ID')}</td>
+                    <td>${(report.klikShopee || 0).toLocaleString('id-ID')}</td>
+                    <td>${(report.produkTerjual || 0).toLocaleString('id-ID')}</td>
+                    <td>${formatIDR(report.spend || 0)}</td>
+                    <td>${formatIDR(report.komisi || 0)}</td>
+                    <td class="${(report.profit || 0) >= 0 ? 'text-success':'text-danger'}">${formatIDR(report.profit || 0)}</td>
+                    <td>${(report.roi || 0).toFixed(2)}%</td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleSavedReportDetailInline('${report.tanggal}', this)">
+                                <i class="fa-solid fa-chevron-down"></i> Detail
+                            </button>
+                            <button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeReport('${report.tanggal}')">
+                                <i class="fa-solid fa-trash-can"></i> Hapus
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            let totalRoi = totalSpend > 0 ? (totalProfit / totalSpend) * 100 : 0;
+
+            let trTotal = document.createElement('tr');
+            trTotal.className = "table-secondary fw-bold border-top border-dark";
+            trTotal.innerHTML = `
+                <td class="text-dark"><i class="fa-solid fa-calculator me-1"></i> TOTAL REKAP</td>
+                <td>${totalKlikMeta.toLocaleString('id-ID')}</td>
+                <td>${totalKlikShopee.toLocaleString('id-ID')}</td>
+                <td>${totalProdukTerjual.toLocaleString('id-ID')}</td>
+                <td>${formatIDR(totalSpend)}</td>
+                <td>${formatIDR(totalKomisi)}</td>
+                <td class="${totalProfit >= 0 ? 'text-success':'text-danger'}">${formatIDR(totalProfit)}</td>
+                <td>${totalRoi.toFixed(2)}%</td>
+                <td></td>
+            `;
+            tbody.appendChild(trTotal);
+        }
+
+        function renderTagLinkTable(filterQuery = '') {
+            const tbody = document.getElementById('tableTagLinkBody');
+            tbody.innerHTML = '';
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
+            sortedList.sort((a, b) => b.komisi - a.komisi);
+
+            sortedList.forEach(item => {
+                if (filterQuery && !item.displayTag.toLowerCase().includes(filterQuery.toLowerCase())) return;
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${globalData.metaDate}</td>
+                    <td class="fw-bold text-primary">${item.displayTag}</td>
+                    <td>${item.klikMeta.toLocaleString('id-ID')}</td>
+                    <td>${item.klikShopee.toLocaleString('id-ID')}</td>
+                    <td>${item.produkTerjual.toLocaleString('id-ID')}</td>
+                    <td>${formatIDR(item.spend)}</td>
+                    <td>${formatIDR(item.komisi)}</td>
+                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(item.profit)}</td>
+                    <td>${item.roi.toFixed(2)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterTagLink() {
+            renderTagLinkTable(document.getElementById('searchTagLink').value);
+        }
+
+        function renderAtribusiTable() {
+            const tbody = document.getElementById('tableAtribusiBody');
+            tbody.innerHTML = '';
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
+            sortedList.sort((a, b) => b.komisi - a.komisi);
+
+            sortedList.forEach((item, index) => {
+                let tr = document.createElement('tr');
+                let actionBtn = item.productDetails.length > 0 ? `<button class="btn btn-xs btn-outline-danger py-0 px-1" style="font-size:10px" onclick="showProductDetails('${item.displayTag.toLowerCase()}')"><i class="fa-solid fa-list"></i> Detail</button>` : '-';
+                tr.innerHTML = `
+                    <td>${globalData.metaDate}</td>
+                    <td class="fw-bold">${item.displayTag}</td>
+                    <td class="text-wrap" style="max-width:150px;">${item.campaigns.join(', ') || '-'}</td>
+                    <td>${item.klikMeta.toLocaleString('id-ID')}</td>
+                    <td>${item.klikShopee.toLocaleString('id-ID')}</td>
+                    <td>${item.produkTerjual.toLocaleString('id-ID')}</td>
+                    <td>${formatIDR(item.spend)}</td>
+                    <td>${formatIDR(item.komisi)}</td>
+                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(item.profit)}</td>
+                    <td>${item.roi.toFixed(2)}%</td>
+                    <td>${item.roas.toFixed(2)}</td>
+                    <td>${formatIDR(item.avgKomisi)}</td>
+                    <td>${actionBtn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showProductDetails(tagKey) {
+            const targetItem = globalData.processed.byTagLink[tagKey.trim()];
+            if(!targetItem) return;
+            
+            document.getElementById('detailModalLabel').innerText = `Detail Produk Breakdown — ${targetItem.displayTag}`;
+            let modalTbody = document.getElementById('modalTableBody');
+            modalTbody.innerHTML = '';
+            targetItem.productDetails.forEach(p => {
+                let r = document.createElement('tr');
+                r.innerHTML = `
+                    <td class="text-wrap">${p.name}</td>
+                    <td>${p.qty}</td>
+                    <td>${formatIDR(p.komisi)}</td>
+                    <td><span class="badge bg-success">${p.status}</span></td>
+                `;
+                modalTbody.appendChild(r);
+            });
+            new bootstrap.Modal(document.getElementById('detailModal')).show();
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('dashboardChart').getContext('2d');
+            if (activeChart) {
+                activeChart.destroy();
+            }
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]).slice(0, 7);
+            activeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedList.map(i => i.displayTag),
+                    datasets: [
+                        { label: 'Spend', data: sortedList.map(i => i.spend), backgroundColor: '#0d6efd' },
+                        { label: 'Komisi', data: sortedList.map(i => i.komisi), backgroundColor: '#2dc574' },
+                        { label: 'Profit', data: sortedList.map(i => i.profit), backgroundColor: '#ffc107' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { font: { size: 10 } } } },
+                    scales: { y: { ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } }
+                }
+            });
+        }
+
+        function downloadCSV(csvContent, filename) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        function exportDashboardCSV() {
+            const totals = globalData.processed.totals;
+            if(!totals.klikMeta && totals.klikMeta !== 0) {
+                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
+                return;
+            }
+            let csv = "Tanggal,Metrik Utama,Value\n";
+            csv += `${globalData.metaDate},Total Spend Meta,${Math.round(totals.spend)}\n`;
+            csv += `${globalData.metaDate},Total Klik Meta,${totals.klikMeta}\n`;
+            csv += `${globalData.metaDate},Total Klik Shopee,${totals.klikShopee}\n`;
+            csv += `${globalData.metaDate},Total Pesanan,${totals.produkTerjual}\n`;
+            csv += `${globalData.metaDate},Total Komisi Shopee,${Math.round(totals.komisi)}\n`;
+            csv += `${globalData.metaDate},Total Profit,${Math.round(totals.profit)}\n`;
+            csv += `${globalData.metaDate},ROI,${totals.roi.toFixed(2)}%\n`;
+            
+            downloadCSV(csv, `Rekap_Dashboard_Affiliate_${globalData.metaDate}.csv`);
+        }
+
+        function exportTagLinkCSV() {
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
+            if(sortedList.length === 0) {
+                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
+                return;
+            }
+            sortedList.sort((a, b) => b.komisi - a.komisi);
+
+            let csv = "Tanggal,Tag Link,Klik Meta,Klik Shopee,Pesanan,Spend,Komisi,Profit,ROI\n";
+            sortedList.forEach(item => {
+                csv += `${globalData.metaDate},"${item.displayTag}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roi.toFixed(2)}%\n`;
+            });
+
+            downloadCSV(csv, `Analisis_TagLink_Report_${globalData.metaDate}.csv`);
+        }
+
+        function exportAtribusiCSV() {
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
+            if(sortedList.length === 0) {
+                showToast("Belum ada data untuk diexport. Silakan analisa CSV dulu.");
+                return;
+            }
+            sortedList.sort((a, b) => b.komisi - a.komisi);
+
+            let csv = "Tanggal,Tag Link,Campaign / Iklan,Klik Meta,Klik Shopee,Total Pesanan,Spend Meta,Komisi Shopee,Profit,ROI,ROAS,AVG Komisi per Order\n";
+            sortedList.forEach(item => {
+                let camp = item.campaigns.join(' | ') || '-';
+                csv += `${globalData.metaDate},"${item.displayTag}","${camp}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roi.toFixed(2)}%,${item.roas.toFixed(2)},${Math.round(item.avgKomisi)}\n`;
+            });
+
+            downloadCSV(csv, `Laporan_Atribusi_Bisnis_${globalData.metaDate}.csv`);
+        }
     </script>
 </body>
 </html>
