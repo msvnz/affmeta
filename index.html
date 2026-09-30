@@ -361,7 +361,6 @@
                         if (results.data.length > 0) {
                             const headers = Object.keys(results.data[0]);
                             const missing = requiredHeaders.filter(h => !headers.includes(h));
-                            // Hapus filter Tag_link1 karena kita cek Tag_link1 sampai 5
                             const isAffiliate = requiredHeaders.includes('Komisi Bersih Affiliate (Rp)');
                             if (missing.length > 0 && !isAffiliate) {
                                 reject(`Format CSV tidak dikenali. Header Hilang: ${missing.join(', ')}`);
@@ -408,8 +407,6 @@
 
                 globalData.meta = fileMeta ? await parseCSVFile(fileMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']) : [];
                 globalData.webClick = fileWebClick ? await parseCSVFile(fileWebClick, ['Tag_link']) : [];
-                
-                // Tambahkan 'ID Pemesanan' pada required header pengecekan file Affiliate
                 globalData.affiliate = await parseCSVFile(fileAffiliate, ['ID Pemesanan', 'Komisi Bersih Affiliate (Rp)', 'Nama Barange', 'Status Pesanan']);
 
                 aggregateData();
@@ -440,6 +437,7 @@
         function aggregateData() {
             let dataset = {};
 
+            // 1. Olah data Web Click
             if (globalData.webClick && globalData.webClick.length > 0) {
                 globalData.webClick.forEach(row => {
                     let rawTag = row['Tag_link'];
@@ -466,6 +464,7 @@
                 });
             }
 
+            // 2. Olah data Meta Ads dengan EXACT MATCH untuk mencegah pembacaan dobel
             if (globalData.meta && globalData.meta.length > 0) {
                 globalData.meta.forEach(row => {
                     let rawAdName = row['Nama iklan'] || 'Unknown';
@@ -479,13 +478,15 @@
                     for (let tag in dataset) {
                         if (tag === 'unassigned') continue;
                         
-                        if (tag.includes(adName) || adName.includes(tag)) {
+                        // PERBAIKAN REVISI: Menggunakan Exact Match (tag === adName)
+                        if (tag === adName) {
                             dataset[tag].klikMeta += clicks;
                             dataset[tag].spend += spend;
                             if (!dataset[tag].campaigns.includes(rawAdName)) {
                                 dataset[tag].campaigns.push(rawAdName);
                             }
                             matched = true;
+                            break;
                         }
                     }
 
@@ -500,6 +501,7 @@
                 });
             }
 
+            // 3. Olah data Affiliate Commission
             let processedOrderIdsByTag = {};
             let totalUniqueOrdersTracker = new Set();
 
@@ -529,23 +531,23 @@
                 
                 dataset[tag].komisi += komisi;
                 
-                // Menghitung Jumlah Pesanan Unik
                 if (!processedOrderIdsByTag[tag].has(orderId)) {
                     processedOrderIdsByTag[tag].add(orderId);
-                    dataset[tag].produkTerjual += 1; // Sekarang variabel ini mencatat Pesanan, bukan baris produk
+                    dataset[tag].produkTerjual += 1;
                 }
                 
                 totalUniqueOrdersTracker.add(orderId);
 
                 let existingProd = dataset[tag].productDetails.find(p => p.name === produkName);
                 if(existingProd) {
-                    existingProd.qty += 1; // qty mencatat baris data produk (produk item)
+                    existingProd.qty += 1;
                     existingProd.komisi += komisi;
                 } else {
                     dataset[tag].productDetails.push({ name: produkName, qty: 1, komisi: komisi, status: status });
                 }
             });
 
+            // 4. Hitung Totals & Ratios
             let grandTotals = createDataTemplate('TOTAL REKAP');
             grandTotals.produkTerjual = totalUniqueOrdersTracker.size;
 
@@ -574,7 +576,7 @@
                 displayTag: displayTag, 
                 klikMeta: 0, 
                 klikShopee: 0, 
-                produkTerjual: 0, // Merupakan 'Jumlah Pesanan'
+                produkTerjual: 0, 
                 spend: 0, 
                 komisi: 0, 
                 profit: 0, 
