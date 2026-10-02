@@ -186,6 +186,13 @@
                 </section>
 
                 <section id="menu-savedreports" class="menu-section d-none">
+                    <div class="card p-2 shadow-sm border-0 mb-3 text-end">
+                        <div class="d-flex justify-content-end gap-2">
+                            <button class="btn btn-sm btn-warning fw-bold" onclick="exportSavedReportsJSON()">
+                                <i class="fa-solid fa-file-code me-1"></i> Export JSON Data
+                            </button>
+                        </div>
+                    </div>
                     <div class="card shadow-sm border-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
@@ -1010,6 +1017,38 @@
             });
 
             downloadCSV(csv, `Laporan_Atribusi_Bisnis_${globalData.metaDate}.csv`);
+        }
+
+        function exportSavedReportsJSON() {
+            // 1. Ambil data dari localStorage
+            const savedData = localStorage.getItem('affiliate_saved_reports');
+            
+            // 2. Cek apakah ada data yang tersimpan
+            if (!savedData || savedData === "[]") {
+                showToast("Belum ada data laporan tersimpan untuk diexport.", true);
+                return;
+            }
+
+            // 3. Rapihkan format JSON agar mudah dibaca (opsional, indentasi 4 spasi)
+            const parsedData = JSON.parse(savedData);
+            const prettyJSON = JSON.stringify(parsedData, null, 4);
+
+            // 4. Buat file Blob JSON
+            const blob = new Blob([prettyJSON], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            // 5. Buat elemen link sementara untuk proses download
+            const link = document.createElement("a");
+            const dateStr = new Date().toISOString().slice(0, 10); // Format YYYY-MM-DD
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Backup_SavedReports_${dateStr}.json`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url); // Hapus URL dari memori
         }
     </script>
 </body>
