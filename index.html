@@ -191,6 +191,9 @@
                             <button class="btn btn-sm btn-warning fw-bold" onclick="exportSavedReportsJSON()">
                                 <i class="fa-solid fa-file-code me-1"></i> Export JSON Data
                             </button>
+                            <button class="btn btn-sm btn-danger fw-bold" onclick="clearAllSavedReports()">
+                                <i class="fa-solid fa-trash-can me-1"></i> Bersihkan Semua Data
+                            </button>
                         </div>
                     </div>
                     <div class="card shadow-sm border-0">
@@ -444,7 +447,6 @@
         function aggregateData() {
             let dataset = {};
 
-            // 1. Olah data Web Click
             if (globalData.webClick && globalData.webClick.length > 0) {
                 globalData.webClick.forEach(row => {
                     let rawTag = row['Tag_link'];
@@ -471,7 +473,6 @@
                 });
             }
 
-            // 2. Olah data Meta Ads dengan EXACT MATCH untuk mencegah pembacaan dobel
             if (globalData.meta && globalData.meta.length > 0) {
                 globalData.meta.forEach(row => {
                     let rawAdName = row['Nama iklan'] || 'Unknown';
@@ -485,7 +486,6 @@
                     for (let tag in dataset) {
                         if (tag === 'unassigned') continue;
                         
-                        // PERBAIKAN REVISI: Menggunakan Exact Match (tag === adName)
                         if (tag === adName) {
                             dataset[tag].klikMeta += clicks;
                             dataset[tag].spend += spend;
@@ -508,7 +508,6 @@
                 });
             }
 
-            // 3. Olah data Affiliate Commission
             let processedOrderIdsByTag = {};
             let totalUniqueOrdersTracker = new Set();
 
@@ -554,7 +553,6 @@
                 }
             });
 
-            // 4. Hitung Totals & Ratios
             let grandTotals = createDataTemplate('TOTAL REKAP');
             grandTotals.produkTerjual = totalUniqueOrdersTracker.size;
 
@@ -703,6 +701,21 @@
                 currentReports = currentReports.filter(r => r.tanggal !== dateStr);
                 localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
                 renderSavedReportsTable();
+            }
+        }
+
+        // FUNGSI BARU UNTUK MEMBERSIHKAN SEMUA DATA
+        function clearAllSavedReports() {
+            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            if (currentReports.length === 0) {
+                showToast("Tidak ada data laporan yang tersimpan.", true);
+                return;
+            }
+
+            if (confirm("Apakah Anda yakin ingin menghapus SEMUA laporan yang tersimpan? Tindakan ini tidak dapat dibatalkan.")) {
+                localStorage.removeItem('affiliate_saved_reports');
+                renderSavedReportsTable();
+                showToast("Semua data laporan berhasil dibersihkan!", false);
             }
         }
 
@@ -1020,26 +1033,21 @@
         }
 
         function exportSavedReportsJSON() {
-            // 1. Ambil data dari localStorage
             const savedData = localStorage.getItem('affiliate_saved_reports');
             
-            // 2. Cek apakah ada data yang tersimpan
             if (!savedData || savedData === "[]") {
                 showToast("Belum ada data laporan tersimpan untuk diexport.", true);
                 return;
             }
 
-            // 3. Rapihkan format JSON agar mudah dibaca (opsional, indentasi 4 spasi)
             const parsedData = JSON.parse(savedData);
             const prettyJSON = JSON.stringify(parsedData, null, 4);
 
-            // 4. Buat file Blob JSON
             const blob = new Blob([prettyJSON], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
-            // 5. Buat elemen link sementara untuk proses download
             const link = document.createElement("a");
-            const dateStr = new Date().toISOString().slice(0, 10); // Format YYYY-MM-DD
+            const dateStr = new Date().toISOString().slice(0, 10);
             
             link.setAttribute("href", url);
             link.setAttribute("download", `Backup_SavedReports_${dateStr}.json`);
@@ -1048,7 +1056,7 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(url); // Hapus URL dari memori
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
