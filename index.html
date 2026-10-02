@@ -608,7 +608,7 @@
                 ${createKPICard('Klik Meta', totals.klikMeta.toLocaleString('id-ID'))}
                 ${createKPICard('Klik Shopee', totals.klikShopee.toLocaleString('id-ID'))}
                 ${createKPICard('Total Pesanan', totals.produkTerjual.toLocaleString('id-ID'))}
-                ${createKPICard('Komisi Shopee', formatIDR(totals.komisi))}
+                ${createKPICard('Komisi Shopee', formatIDR(totals.komisi), 'text-primary')}
                 ${createKPICard('Profit', formatIDR(totals.profit), totals.profit >= 0 ? 'text-success' : 'text-danger')}
                 ${createKPICard('ROI', totals.roi.toFixed(2) + '%')}
                 ${createKPICard('CPC', formatIDR(cpc))}
@@ -622,8 +622,8 @@
                     <td>${totals.klikShopee.toLocaleString('id-ID')}</td>
                     <td>${totals.produkTerjual.toLocaleString('id-ID')}</td>
                     <td>${formatIDR(totals.spend)}</td>
-                    <td>${formatIDR(totals.komisi)}</td>
-                    <td class="${totals.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(totals.profit)}</td>
+                    <td class="text-primary fw-bold">${formatIDR(totals.komisi)}</td>
+                    <td class="${totals.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(totals.profit)}</td>
                     <td>${totals.roi.toFixed(2)}%</td>
                 </tr>
             `;
@@ -704,7 +704,6 @@
             }
         }
 
-        // FUNGSI BARU UNTUK MEMBERSIHKAN SEMUA DATA
         function clearAllSavedReports() {
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
             if (currentReports.length === 0) {
@@ -756,13 +755,13 @@
                 
                 tableRowsHtml += `
                     <tr>
-                        <td class="fw-bold text-primary">${item.displayTag}</td>
+                        <td class="fw-bold text-dark">${item.displayTag}</td>
                         <td class="text-wrap" style="max-width: 180px; font-size:11px;">${sourcesText}</td>
                         <td>${(item.klikMeta || 0).toLocaleString('id-ID')}</td>
                         <td>${(item.klikShopee || 0).toLocaleString('id-ID')}</td>
                         <td>${(item.produkTerjual || 0).toLocaleString('id-ID')}</td>
                         <td>${formatIDR(item.spend || 0)}</td>
-                        <td>${formatIDR(item.komisi || 0)}</td>
+                        <td class="text-primary fw-bold">${formatIDR(item.komisi || 0)}</td>
                         <td class="fw-bold ${profitColor}">${formatIDR(itemProfit)}</td>
                     </tr>
                 `;
@@ -831,8 +830,8 @@
                     <td>${(report.klikShopee || 0).toLocaleString('id-ID')}</td>
                     <td>${(report.produkTerjual || 0).toLocaleString('id-ID')}</td>
                     <td>${formatIDR(report.spend || 0)}</td>
-                    <td>${formatIDR(report.komisi || 0)}</td>
-                    <td class="${(report.profit || 0) >= 0 ? 'text-success':'text-danger'}">${formatIDR(report.profit || 0)}</td>
+                    <td class="text-primary fw-bold">${formatIDR(report.komisi || 0)}</td>
+                    <td class="${(report.profit || 0) >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(report.profit || 0)}</td>
                     <td>${(report.roi || 0).toFixed(2)}%</td>
                     <td>
                         <div class="d-flex gap-1">
@@ -858,8 +857,8 @@
                 <td>${totalKlikShopee.toLocaleString('id-ID')}</td>
                 <td>${totalProdukTerjual.toLocaleString('id-ID')}</td>
                 <td>${formatIDR(totalSpend)}</td>
-                <td>${formatIDR(totalKomisi)}</td>
-                <td class="${totalProfit >= 0 ? 'text-success':'text-danger'}">${formatIDR(totalProfit)}</td>
+                <td class="text-primary fw-bold">${formatIDR(totalKomisi)}</td>
+                <td class="${totalProfit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(totalProfit)}</td>
                 <td>${totalRoi.toFixed(2)}%</td>
                 <td></td>
             `;
@@ -877,13 +876,13 @@
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${globalData.metaDate}</td>
-                    <td class="fw-bold text-primary">${item.displayTag}</td>
+                    <td class="fw-bold text-dark">${item.displayTag}</td>
                     <td>${item.klikMeta.toLocaleString('id-ID')}</td>
                     <td>${item.klikShopee.toLocaleString('id-ID')}</td>
                     <td>${item.produkTerjual.toLocaleString('id-ID')}</td>
                     <td>${formatIDR(item.spend)}</td>
-                    <td>${formatIDR(item.komisi)}</td>
-                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(item.profit)}</td>
+                    <td class="text-primary fw-bold">${formatIDR(item.komisi)}</td>
+                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(item.profit)}</td>
                     <td>${item.roi.toFixed(2)}%</td>
                 `;
                 tbody.appendChild(tr);
@@ -911,8 +910,8 @@
                     <td>${item.klikShopee.toLocaleString('id-ID')}</td>
                     <td>${item.produkTerjual.toLocaleString('id-ID')}</td>
                     <td>${formatIDR(item.spend)}</td>
-                    <td>${formatIDR(item.komisi)}</td>
-                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'}">${formatIDR(item.profit)}</td>
+                    <td class="text-primary fw-bold">${formatIDR(item.komisi)}</td>
+                    <td class="${item.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(item.profit)}</td>
                     <td>${item.roi.toFixed(2)}%</td>
                     <td>${item.roas.toFixed(2)}</td>
                     <td>${formatIDR(item.avgKomisi)}</td>
@@ -934,7 +933,7 @@
                 r.innerHTML = `
                     <td class="text-wrap">${p.name}</td>
                     <td>${p.qty}</td>
-                    <td>${formatIDR(p.komisi)}</td>
+                    <td class="text-primary fw-bold">${formatIDR(p.komisi)}</td>
                     <td><span class="badge bg-success">${p.status}</span></td>
                 `;
                 modalTbody.appendChild(r);
