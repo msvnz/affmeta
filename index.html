@@ -176,7 +176,7 @@
                                         <th>Spend</th>
                                         <th>Komisi</th>
                                         <th>Profit</th>
-                                        <th>ROI</th>
+                                        <th>ROAS</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tableDashboardBody"></tbody>
@@ -208,7 +208,7 @@
                                         <th>Spend</th>
                                         <th>Komisi</th>
                                         <th>Profit</th>
-                                        <th>ROI</th>
+                                        <th>ROAS</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -244,7 +244,7 @@
                                         <th>Spend</th>
                                         <th>Komisi</th>
                                         <th>Profit</th>
-                                        <th>ROI</th>
+                                        <th>ROAS</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tableTagLinkBody"></tbody>
@@ -273,7 +273,6 @@
                                         <th>Spend Meta</th>
                                         <th>Komisi Shopee</th>
                                         <th>Profit</th>
-                                        <th>ROI</th>
                                         <th>ROAS</th>
                                         <th>AVG Komisi / Order</th>
                                         <th>Aksi</th>
@@ -559,7 +558,6 @@
             for (let tag in dataset) {
                 let d = dataset[tag];
                 d.profit = d.komisi - d.spend;
-                d.roi = d.spend > 0 ? (d.profit / d.spend) * 100 : 0;
                 d.roas = d.spend > 0 ? (d.komisi / d.spend) : 0;
                 d.avgKomisi = d.produkTerjual > 0 ? (d.komisi / d.produkTerjual) : 0;
 
@@ -570,7 +568,7 @@
             }
 
             grandTotals.profit = grandTotals.komisi - grandTotals.spend;
-            grandTotals.roi = grandTotals.spend > 0 ? (grandTotals.profit / grandTotals.spend) * 100 : 0;
+            grandTotals.roas = grandTotals.spend > 0 ? (grandTotals.komisi / grandTotals.spend) : 0;
 
             globalData.processed.byTagLink = dataset;
             globalData.processed.totals = grandTotals;
@@ -585,7 +583,6 @@
                 spend: 0, 
                 komisi: 0, 
                 profit: 0, 
-                roi: 0, 
                 roas: 0, 
                 avgKomisi: 0, 
                 campaigns: [], 
@@ -610,7 +607,7 @@
                 ${createKPICard('Total Pesanan', totals.produkTerjual.toLocaleString('id-ID'))}
                 ${createKPICard('Komisi Shopee', formatIDR(totals.komisi), 'text-primary')}
                 ${createKPICard('Profit', formatIDR(totals.profit), totals.profit >= 0 ? 'text-success' : 'text-danger')}
-                ${createKPICard('ROI', totals.roi.toFixed(2) + '%')}
+                ${createKPICard('ROAS', totals.roas.toFixed(2) + 'x')}
                 ${createKPICard('CPC', formatIDR(cpc))}
                 ${createKPICard('Conversion Rate', cvr.toFixed(2) + '%')}
             `;
@@ -624,7 +621,7 @@
                     <td>${formatIDR(totals.spend)}</td>
                     <td class="text-primary fw-bold">${formatIDR(totals.komisi)}</td>
                     <td class="${totals.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(totals.profit)}</td>
-                    <td>${totals.roi.toFixed(2)}%</td>
+                    <td>${totals.roas.toFixed(2)}x</td>
                 </tr>
             `;
         }
@@ -684,7 +681,7 @@
                 spend: totals.spend,
                 komisi: totals.komisi,
                 profit: totals.profit,
-                roi: totals.roi,
+                roas: totals.roas,
                 breakdown: taglinkBreakdown
             };
 
@@ -823,6 +820,9 @@
                 totalKomisi += report.komisi || 0;
                 totalProfit += report.profit || 0;
 
+                // Backwards compatibility untuk data JSON lama yang tidak menyimpan ROAS
+                let roasValue = report.roas !== undefined ? report.roas : (report.spend > 0 ? (report.komisi / report.spend) : 0);
+
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="fw-bold text-orange">${report.tanggal}</td>
@@ -832,7 +832,7 @@
                     <td>${formatIDR(report.spend || 0)}</td>
                     <td class="text-primary fw-bold">${formatIDR(report.komisi || 0)}</td>
                     <td class="${(report.profit || 0) >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(report.profit || 0)}</td>
-                    <td>${(report.roi || 0).toFixed(2)}%</td>
+                    <td>${roasValue.toFixed(2)}x</td>
                     <td>
                         <div class="d-flex gap-1">
                             <button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleSavedReportDetailInline('${report.tanggal}', this)">
@@ -847,7 +847,7 @@
                 tbody.appendChild(tr);
             });
 
-            let totalRoi = totalSpend > 0 ? (totalProfit / totalSpend) * 100 : 0;
+            let totalRoas = totalSpend > 0 ? (totalKomisi / totalSpend) : 0;
 
             let trTotal = document.createElement('tr');
             trTotal.className = "table-secondary fw-bold border-top border-dark";
@@ -859,7 +859,7 @@
                 <td>${formatIDR(totalSpend)}</td>
                 <td class="text-primary fw-bold">${formatIDR(totalKomisi)}</td>
                 <td class="${totalProfit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(totalProfit)}</td>
-                <td>${totalRoi.toFixed(2)}%</td>
+                <td>${totalRoas.toFixed(2)}x</td>
                 <td></td>
             `;
             tbody.appendChild(trTotal);
@@ -883,7 +883,7 @@
                     <td>${formatIDR(item.spend)}</td>
                     <td class="text-primary fw-bold">${formatIDR(item.komisi)}</td>
                     <td class="${item.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(item.profit)}</td>
-                    <td>${item.roi.toFixed(2)}%</td>
+                    <td>${item.roas.toFixed(2)}x</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -912,8 +912,7 @@
                     <td>${formatIDR(item.spend)}</td>
                     <td class="text-primary fw-bold">${formatIDR(item.komisi)}</td>
                     <td class="${item.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(item.profit)}</td>
-                    <td>${item.roi.toFixed(2)}%</td>
-                    <td>${item.roas.toFixed(2)}</td>
+                    <td>${item.roas.toFixed(2)}x</td>
                     <td>${formatIDR(item.avgKomisi)}</td>
                     <td>${actionBtn}</td>
                 `;
@@ -993,7 +992,7 @@
             csv += `${globalData.metaDate},Total Pesanan,${totals.produkTerjual}\n`;
             csv += `${globalData.metaDate},Total Komisi Shopee,${Math.round(totals.komisi)}\n`;
             csv += `${globalData.metaDate},Total Profit,${Math.round(totals.profit)}\n`;
-            csv += `${globalData.metaDate},ROI,${totals.roi.toFixed(2)}%\n`;
+            csv += `${globalData.metaDate},ROAS,${totals.roas.toFixed(2)}\n`;
             
             downloadCSV(csv, `Rekap_Dashboard_Affiliate_${globalData.metaDate}.csv`);
         }
@@ -1006,9 +1005,9 @@
             }
             sortedList.sort((a, b) => b.komisi - a.komisi);
 
-            let csv = "Tanggal,Tag Link,Klik Meta,Klik Shopee,Pesanan,Spend,Komisi,Profit,ROI\n";
+            let csv = "Tanggal,Tag Link,Klik Meta,Klik Shopee,Pesanan,Spend,Komisi,Profit,ROAS\n";
             sortedList.forEach(item => {
-                csv += `${globalData.metaDate},"${item.displayTag}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roi.toFixed(2)}%\n`;
+                csv += `${globalData.metaDate},"${item.displayTag}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roas.toFixed(2)}\n`;
             });
 
             downloadCSV(csv, `Analisis_TagLink_Report_${globalData.metaDate}.csv`);
@@ -1022,10 +1021,10 @@
             }
             sortedList.sort((a, b) => b.komisi - a.komisi);
 
-            let csv = "Tanggal,Tag Link,Campaign / Iklan,Klik Meta,Klik Shopee,Total Pesanan,Spend Meta,Komisi Shopee,Profit,ROI,ROAS,AVG Komisi per Order\n";
+            let csv = "Tanggal,Tag Link,Campaign / Iklan,Klik Meta,Klik Shopee,Total Pesanan,Spend Meta,Komisi Shopee,Profit,ROAS,AVG Komisi per Order\n";
             sortedList.forEach(item => {
                 let camp = item.campaigns.join(' | ') || '-';
-                csv += `${globalData.metaDate},"${item.displayTag}","${camp}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roi.toFixed(2)}%,${item.roas.toFixed(2)},${Math.round(item.avgKomisi)}\n`;
+                csv += `${globalData.metaDate},"${item.displayTag}","${camp}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roas.toFixed(2)},${Math.round(item.avgKomisi)}\n`;
             });
 
             downloadCSV(csv, `Laporan_Atribusi_Bisnis_${globalData.metaDate}.csv`);
