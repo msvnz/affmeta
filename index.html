@@ -288,11 +288,12 @@
         </div>
     </div>
 
+    <!-- Modal Pop-Up untuk Detail Produk -->
     <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl"> <!-- Diperlebar menjadi modal-xl agar tabel muat -->
             <div class="modal-content">
                 <div class="modal-header">
-                    <h6 class="modal-title fw-bold" id="detailModalLabel">Detail Produk</h6>
+                    <h6 class="modal-title fw-bold" id="detailModalLabel">Detail Transaksi Produk</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">
@@ -301,7 +302,8 @@
                             <thead class="table-secondary sticky-top">
                                 <tr>
                                     <th>Nama Produk</th>
-                                    <th>Qty (Baris Data)</th>
+                                    <th>Waktu Klik / Transaksi</th>
+                                    <th>Platform Source</th>
                                     <th>Komisi</th>
                                     <th>Status</th>
                                 </tr>
@@ -531,6 +533,10 @@
                 let status = row['Status Pesanan'] || 'Completed';
                 let orderId = row['ID Pemesanan'] || 'Unknown-' + Math.random();
 
+                // Mengambil nilai waktu klik dan platform (dengan beberapa variasi nama kolom)
+                let waktuKlik = row['Waktu Klik'] || row['Waktu Pembuatan Pesanan'] || row['Click Time'] || '-';
+                let platform = row['Platform'] || row['Media Sosial'] || row['Platform Media Sosial'] || row['Social Media'] || '-';
+
                 if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag);
                 if (!processedOrderIdsByTag[tag]) processedOrderIdsByTag[tag] = new Set();
                 
@@ -543,13 +549,14 @@
                 
                 totalUniqueOrdersTracker.add(orderId);
 
-                let existingProd = dataset[tag].productDetails.find(p => p.name === produkName);
-                if(existingProd) {
-                    existingProd.qty += 1;
-                    existingProd.komisi += komisi;
-                } else {
-                    dataset[tag].productDetails.push({ name: produkName, qty: 1, komisi: komisi, status: status });
-                }
+                // Menyimpan transaksi secara individual (per baris) agar info waktu & platform spesifik
+                dataset[tag].productDetails.push({ 
+                    name: produkName, 
+                    waktuKlik: waktuKlik, 
+                    platform: platform, 
+                    komisi: komisi, 
+                    status: status 
+                });
             });
 
             let grandTotals = createDataTemplate('TOTAL REKAP');
@@ -820,7 +827,6 @@
                 totalKomisi += report.komisi || 0;
                 totalProfit += report.profit || 0;
 
-                // Backwards compatibility untuk data JSON lama yang tidak menyimpan ROAS
                 let roasValue = report.roas !== undefined ? report.roas : (report.spend > 0 ? (report.komisi / report.spend) : 0);
 
                 let tr = document.createElement('tr');
@@ -924,14 +930,17 @@
             const targetItem = globalData.processed.byTagLink[tagKey.trim()];
             if(!targetItem) return;
             
-            document.getElementById('detailModalLabel').innerText = `Detail Produk Breakdown — ${targetItem.displayTag}`;
+            document.getElementById('detailModalLabel').innerText = `Detail Transaksi Breakdown — ${targetItem.displayTag}`;
             let modalTbody = document.getElementById('modalTableBody');
             modalTbody.innerHTML = '';
+            
+            // Loop data per baris transaksi
             targetItem.productDetails.forEach(p => {
                 let r = document.createElement('tr');
                 r.innerHTML = `
                     <td class="text-wrap">${p.name}</td>
-                    <td>${p.qty}</td>
+                    <td style="white-space: nowrap;">${p.waktuKlik}</td>
+                    <td>${p.platform}</td>
                     <td class="text-primary fw-bold">${formatIDR(p.komisi)}</td>
                     <td><span class="badge bg-success">${p.status}</span></td>
                 `;
