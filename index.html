@@ -242,6 +242,7 @@
                                         <th>Komisi</th>
                                         <th>Profit</th>
                                         <th>ROAS</th>
+                                        <th>Aksi</th> <!-- Tambahan Kolom Aksi -->
                                     </tr>
                                 </thead>
                                 <tbody id="tableTagLinkBody"></tbody>
@@ -254,7 +255,7 @@
         </div>
     </div>
 
-    <!-- Modal Pop-Up untuk Detail Produk -->
+    <!-- Modal Pop-Up untuk Detail Produk (Dipakai oleh Saved Reports & TagLink Analyze) -->
     <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl"> 
             <div class="modal-content">
@@ -263,7 +264,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">
-                    <!-- Section khusus Source Traffic -->
                     <div id="modalTrafficSource" class="px-3 py-2 bg-light border-bottom text-muted" style="font-size: 11px; display: none;">
                         <!-- Konten source akan diinjeksi ke sini -->
                     </div>
@@ -682,15 +682,27 @@
             }
         }
 
-        function showSavedProductDetails(dateStr, tagKey) {
-            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
-            let foundReport = currentReports.find(r => r.tanggal === dateStr);
-            if(!foundReport) return;
+        // Fungsi Show Details (Dipakai oleh Menu TagLink Analyze & Saved Reports)
+        function showProductDetails(tagKey, dateStr = null) {
+            let targetItem = null;
+            let targetDate = dateStr || globalData.metaDate;
             
-            let targetItem = foundReport.breakdown.find(b => b.displayTag === tagKey);
+            // Jika dipanggil dari Saved Reports
+            if(dateStr) {
+                let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+                let foundReport = currentReports.find(r => r.tanggal === dateStr);
+                if(foundReport) {
+                    targetItem = foundReport.breakdown.find(b => b.displayTag === tagKey);
+                }
+            } 
+            // Jika dipanggil dari TagLink Analyze (data aktif)
+            else {
+                targetItem = globalData.processed.byTagLink[tagKey.trim()];
+            }
+            
             if(!targetItem) return;
             
-            document.getElementById('detailModalLabel').innerText = `Detail Transaksi — ${targetItem.displayTag} (${dateStr})`;
+            document.getElementById('detailModalLabel').innerText = `Detail Transaksi — ${targetItem.displayTag} (${targetDate})`;
             
             const tsDiv = document.getElementById('modalTrafficSource');
             if (targetItem.trafficSources && targetItem.trafficSources.length > 0) {
@@ -718,7 +730,7 @@
                 });
             } else {
                 let r = document.createElement('tr');
-                r.innerHTML = `<td colspan="5" class="text-center text-muted py-3 fst-italic">Rincian produk belum tersedia. Harap hapus laporan ini dan simpan ulang CSV untuk mendapatkan fitur Detail lengkap.</td>`;
+                r.innerHTML = `<td colspan="5" class="text-center text-muted py-3 fst-italic">Rincian produk belum tersedia.</td>`;
                 modalTbody.appendChild(r);
             }
             
@@ -759,7 +771,7 @@
                 const itemProfit = item.profit !== undefined ? item.profit : (item.komisi - item.spend);
                 const profitColor = itemProfit >= 0 ? "text-success" : "text-danger";
                 
-                let actionBtn = `<button class="btn btn-xs btn-outline-danger py-0 px-2" style="font-size:10px" onclick="showSavedProductDetails('${dateStr}', '${item.displayTag}')"><i class="fa-solid fa-list"></i> Detail</button>`;
+                let actionBtn = `<button class="btn btn-xs btn-outline-danger py-0 px-2" style="font-size:10px" onclick="showProductDetails('${item.displayTag}', '${dateStr}')"><i class="fa-solid fa-list"></i> Detail</button>`;
                 
                 tableRowsHtml += `
                     <tr>
@@ -884,6 +896,10 @@
             sortedList.forEach(item => {
                 if (filterQuery && !item.displayTag.toLowerCase().includes(filterQuery.toLowerCase())) return;
                 let tr = document.createElement('tr');
+                
+                // Tambahan Tombol Aksi Detail di Menu TagLink Analyze
+                let actionBtn = item.productDetails.length > 0 ? `<button class="btn btn-xs btn-outline-danger py-0 px-2" style="font-size:10px" onclick="showProductDetails('${item.displayTag}')"><i class="fa-solid fa-list"></i> Detail</button>` : '-';
+
                 tr.innerHTML = `
                     <td>${globalData.metaDate}</td>
                     <td class="fw-bold text-dark">${item.displayTag}</td>
@@ -894,6 +910,7 @@
                     <td class="text-primary fw-bold">${formatIDR(item.komisi)}</td>
                     <td class="${item.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(item.profit)}</td>
                     <td>${item.roas.toFixed(2)}x</td>
+                    <td>${actionBtn}</td>
                 `;
                 tbody.appendChild(tr);
             });
