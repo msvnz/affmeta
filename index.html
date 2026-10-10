@@ -306,18 +306,23 @@
         </div>
     </div>
 
-    <!-- Modal Pop-Up Distribusi Tanggal Klik -->
+    <!-- MODAL BARU: Distribusi Tanggal & Platform -->
     <div class="modal fade" id="distribusiModal" tabindex="-1" aria-labelledby="distribusiModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg"> 
             <div class="modal-content">
                 <div class="modal-header bg-light">
-                    <h6 class="modal-title fw-bold text-dark" id="distribusiModalLabel">Distribusi Tanggal Klik</h6>
+                    <h6 class="modal-title fw-bold text-dark" id="distribusiModalLabel">Analisis Pesanan TagLink</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body px-4 py-4">
                     <div class="mb-4 text-secondary" id="distribusiModalSubTitle" style="font-size: 13px;"></div>
+                    
+                    <!-- Seksi 1: Tanggal Klik -->
+                    <h6 class="fw-bold mb-3 text-dark border-bottom pb-2" style="font-size: 13px;">
+                        <i class="fa-regular fa-calendar-check me-2 text-success"></i>Atribusi Tanggal Klik (Kapan diklik?)
+                    </h6>
                     <div id="distribusiModalBody"></div>
-                    <div class="mt-4 pt-3 border-top d-flex gap-4">
+                    <div class="mt-3 mb-4 d-flex gap-4">
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge bg-success" style="width: 14px; height: 14px; display: inline-block;"></span>
                             <span class="text-muted" style="font-size: 11px;">Klik di hari yang sama dengan pesanan</span>
@@ -327,6 +332,13 @@
                             <span class="text-muted" style="font-size: 11px;">Klik hari sebelumnya</span>
                         </div>
                     </div>
+
+                    <!-- Seksi 2: Sumber Platform -->
+                    <h6 class="fw-bold mb-3 text-dark border-bottom pb-2 mt-4" style="font-size: 13px;">
+                        <i class="fa-solid fa-share-nodes me-2 text-info"></i>Sumber Platform Pesanan (Dari mana?)
+                    </h6>
+                    <div id="distribusiPlatformBody"></div>
+                    
                 </div>
                 <div class="modal-footer d-flex justify-content-between align-items-center bg-light">
                     <span class="text-muted fw-bold" style="font-size: 12px;" id="distribusiModalFooterText"></span>
@@ -336,7 +348,7 @@
         </div>
     </div>
 
-    <!-- MODAL BARU: Rincian Klik Shopee -->
+    <!-- MODAL: Rincian Klik Shopee -->
     <div class="modal fade" id="klikShopeeModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog"> 
             <div class="modal-content">
@@ -525,12 +537,9 @@
                     if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag === 'unassigned' ? 'unassigned' : rawTag.replace(/-+$/, ""));
                     dataset[tag].klikShopee += 1;
 
-                    // Simpan list perujuk unik (untuk kompatibilitas lama)
                     if (!dataset[tag].trafficSources.includes(trafficSource)) {
                         dataset[tag].trafficSources.push(trafficSource);
                     }
-                    
-                    // Simpan hitungan perujuk
                     if (!dataset[tag].trafficSourceCounts[trafficSource]) {
                         dataset[tag].trafficSourceCounts[trafficSource] = 0;
                     }
@@ -683,41 +692,49 @@
             if(!targetItem || !targetItem.productDetails) return;
 
             let distribution = {};
+            let platformDist = {}; // Object untuk menampung rekapan sumber platform
+            
             let totalPesanan = 0;
             let unknownCount = 0;
             let unknownKomisi = 0;
 
+            // Proses iterasi untuk menyusun Data Tanggal dan Data Platform
             targetItem.productDetails.forEach(p => {
                 totalPesanan++;
-                let info = getClickDateInfo(p.waktuKlik, dateStr);
                 
+                // 1. Logika untuk Tanggal Klik
+                let info = getClickDateInfo(p.waktuKlik, dateStr);
                 if (info.label === 'Tidak Diketahui') {
                     unknownCount++;
                     unknownKomisi += p.komisi;
                 } else {
                     if (!distribution[info.label]) {
-                        distribution[info.label] = {
-                            label: info.label, diff: info.diff, isSameDay: info.isSameDay, timestamp: info.timestamp, count: 0, komisi: 0
-                        };
+                        distribution[info.label] = { label: info.label, diff: info.diff, isSameDay: info.isSameDay, timestamp: info.timestamp, count: 0, komisi: 0 };
                     }
                     distribution[info.label].count += 1;
                     distribution[info.label].komisi += p.komisi;
                 }
+
+                // 2. Logika untuk Sumber Platform
+                let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform : 'Lainnya / Tidak Diketahui';
+                if (!platformDist[plat]) platformDist[plat] = { count: 0, komisi: 0 };
+                platformDist[plat].count += 1;
+                platformDist[plat].komisi += p.komisi;
             });
 
+            // === RENDER BAGIAN ATAS: Distribusi Tanggal ===
             let distArray = Object.values(distribution).sort((a, b) => a.timestamp - b.timestamp); 
-            
             if (unknownCount > 0) {
                 distArray.push({ label: 'Tidak Diketahui', diff: null, isSameDay: false, timestamp: 9999999999999, count: unknownCount, komisi: unknownKomisi });
             }
 
             let maxCount = Math.max(...distArray.map(d => d.count));
             
-            document.getElementById('distribusiModalLabel').innerText = `Distribusi Klik - ${targetItem.displayTag}`;
-            document.getElementById('distribusiModalSubTitle').innerText = `Pesanan masuk pada laporan tanggal: ${dateStr}`;
+            document.getElementById('distribusiModalLabel').innerText = `Analisis Pesanan - ${targetItem.displayTag}`;
+            document.getElementById('distribusiModalSubTitle').innerText = `Rincian ${totalPesanan} pesanan masuk pada laporan tanggal: ${dateStr}`;
             
-            let container = document.getElementById('distribusiModalBody');
-            container.innerHTML = '';
+            let containerDate = document.getElementById('distribusiModalBody');
+            containerDate.innerHTML = '';
             
             distArray.forEach(item => {
                 let percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
@@ -733,7 +750,7 @@
                     diffText = `<span class="text-muted" style="font-size: 10px;">-${item.diff}h</span>`;
                 }
 
-                container.innerHTML += `
+                containerDate.innerHTML += `
                     <div class="row align-items-center mb-2">
                         <div class="col-3 col-md-2 text-end pe-3">
                             <div class="fw-bold text-dark" style="font-size: 13px;">${item.label}</div>
@@ -753,6 +770,44 @@
                 `;
             });
             
+            // === RENDER BAGIAN BAWAH: Distribusi Platform ===
+            let platArray = Object.keys(platformDist).map(k => {
+                return { name: k, count: platformDist[k].count, komisi: platformDist[k].komisi };
+            });
+            platArray.sort((a, b) => b.count - a.count); // Urutkan dari pesanan terbanyak
+
+            let containerPlat = document.getElementById('distribusiPlatformBody');
+            containerPlat.innerHTML = '';
+
+            let maxPlatCount = platArray.length > 0 ? platArray[0].count : 0;
+
+            if (platArray.length === 0) {
+                containerPlat.innerHTML = `<div class="text-muted fst-italic">Data platform tidak tersedia.</div>`;
+            } else {
+                platArray.forEach(item => {
+                    let percentage = maxPlatCount > 0 ? (item.count / maxPlatCount) * 100 : 0;
+                    if (percentage > 0 && percentage < 10) percentage = 10; 
+
+                    containerPlat.innerHTML += `
+                        <div class="row align-items-center mb-2">
+                            <div class="col-3 col-md-3 text-end pe-3">
+                                <div class="fw-bold text-dark text-truncate" style="font-size: 12px;" title="${item.name}">${item.name}</div>
+                            </div>
+                            <div class="col-5 col-md-6 px-0">
+                                <div class="progress" style="height: 24px; border-radius: 4px; background-color: #e9ecef;">
+                                    <div class="progress-bar bg-info text-dark fw-bold" role="progressbar" style="width: ${percentage}%; text-align: right; padding-right: 12px; font-size: 12px;">
+                                        ${item.count}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4 col-md-3 text-start ps-3">
+                                <span class="fw-bold text-secondary" style="font-size: 12px;">${formatIDR(item.komisi)}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
             let footerText = `Total ${totalPesanan} pesanan dari ${distArray.length} hari klik berbeda`;
             document.getElementById('distribusiModalFooterText').innerText = footerText;
 
@@ -776,7 +831,6 @@
             let sourceCounts = targetItem.trafficSourceCounts || {};
             let sources = Object.keys(sourceCounts);
             
-            // Backup kompatibilitas untuk data tersimpan yang lama
             if (sources.length === 0 && targetItem.trafficSources && targetItem.trafficSources.length > 0) {
                 targetItem.trafficSources.forEach(src => {
                     sourceCounts[src] = "N/A";
@@ -1122,8 +1176,7 @@
                 
                 let actionBtn = `<button class="btn btn-xs btn-outline-danger py-0 px-2" style="font-size:10px" onclick="showProductDetails('${item.displayTag}', '${dateStr}')"><i class="fa-solid fa-list"></i> Detail</button>`;
                 
-                // Link pemicu modal Klik Shopee dan Pesanan
-                let orderCountHtml = `<a href="javascript:void(0)" class="text-decoration-none text-primary fw-bold" title="Lihat Distribusi Klik" onclick="showDistribusiKlik('${dateStr}', '${item.displayTag}')">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
+                let orderCountHtml = `<a href="javascript:void(0)" class="text-decoration-none text-primary fw-bold" title="Lihat Analisis Pesanan" onclick="showDistribusiKlik('${dateStr}', '${item.displayTag}')">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
                 let clickShopeeHtml = `<a href="javascript:void(0)" class="text-decoration-none text-primary fw-bold" title="Lihat Sumber Platform" onclick="showKlikShopeeModal('${dateStr}', '${item.displayTag}')">${(item.klikShopee || 0).toLocaleString('id-ID')}</a>`;
 
                 tableRowsHtml += `
