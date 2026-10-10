@@ -148,16 +148,25 @@
                 <section id="menu-dashboard" class="menu-section d-none">
                     <div class="row row-cols-2 row-cols-md-5 g-2 mb-4" id="kpi-container"></div>
 
-                    <div class="card p-3 shadow-sm border-0 mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-bold mb-0"><i class="fa-solid fa-chart-bar me-2"></i>Grafik Performa</h6>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-primary px-3 fw-bold" onclick="saveReportToStorage()"><i class="fa-solid fa-floppy-disk me-1"></i> Simpan Laporan</button>
-                                <button class="btn btn-sm btn-success px-3 fw-bold" onclick="exportDashboardCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV Rekap</button>
-                            </div>
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-end gap-2 mb-3">
+                        <button class="btn btn-sm btn-primary px-3 fw-bold" onclick="saveReportToStorage()"><i class="fa-solid fa-floppy-disk me-1"></i> Simpan Laporan</button>
+                        <button class="btn btn-sm btn-success px-3 fw-bold" onclick="exportDashboardCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV Rekap</button>
+                    </div>
+
+                    <!-- Widget Sumber Platform -->
+                    <div class="card p-4 shadow-sm border-0 mb-4" style="border-radius: 16px;">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fa-solid fa-share-nodes text-primary fs-5 me-3"></i>
+                            <h5 class="fw-bold text-dark mb-0">Sumber Platform</h5>
                         </div>
-                        <div class="chart-container" style="position: relative; height:250px; width:100%">
-                            <canvas id="dashboardChart"></canvas>
+                        
+                        <select id="platformFilter" class="form-select form-select-sm mb-4 text-secondary w-auto" style="border-radius: 8px; min-width: 200px; box-shadow: none; border: 1px solid #dee2e6;" onchange="renderPlatformSource()">
+                            <option value="all">Semua Tag</option>
+                        </select>
+                    
+                        <div id="platformListContainer">
+                            <!-- Daftar platform akan dimuat di sini oleh JavaScript -->
                         </div>
                     </div>
 
@@ -261,7 +270,7 @@
         </div>
     </div>
 
-    <!-- Modal Pop-Up untuk Detail Produk (Dipakai oleh Saved Reports & TagLink Analyze) -->
+    <!-- Modal Pop-Up untuk Detail Produk -->
     <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl"> 
             <div class="modal-content">
@@ -293,10 +302,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         let globalData = { meta: [], webClick: [], affiliate: [], processed: { totals: {}, byTagLink: {} }, metaDate: "Nama file tidak valid" };
-        let activeChart = null;
 
         document.getElementById('menu-toggle').addEventListener('click', function () {
             document.getElementById('wrapper').classList.toggle('toggled');
@@ -398,7 +405,11 @@
                 aggregateData();
                 renderDashboard();
                 renderTagLinkTable();
-                renderChart();
+                
+                // Render dropdown dan konten Sumber Platform
+                populatePlatformFilter();
+                renderPlatformSource();
+                
                 renderSavedReportsTable();
                 
                 switchMenu('dashboard');
@@ -563,6 +574,85 @@
 
         function formatIDR(num) {
             return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+        }
+
+        // --- FUNGSI BARU: Mengisi Opsi Filter Tag pada Widget Platform ---
+        function populatePlatformFilter() {
+            const select = document.getElementById('platformFilter');
+            select.innerHTML = '<option value="all">Semua Tag</option>';
+            
+            // Ambil dan urutkan list berdasarkan komisi tertinggi
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
+            sortedList.sort((a, b) => b.komisi - a.komisi);
+
+            sortedList.forEach(item => {
+                let opt = document.createElement('option');
+                // Value menggunakan ID (lowercase), Text menggunakan aslinya
+                const valKey = Object.keys(globalData.processed.byTagLink).find(key => globalData.processed.byTagLink[key].displayTag === item.displayTag);
+                opt.value = valKey;
+                opt.textContent = item.displayTag;
+                select.appendChild(opt);
+            });
+        }
+
+        // --- FUNGSI BARU: Render Isi Widget Sumber Platform ---
+        function renderPlatformSource() {
+            const selectedTag = document.getElementById('platformFilter').value;
+            const container = document.getElementById('platformListContainer');
+            container.innerHTML = '';
+
+            let platformStats = {};
+            
+            for(let tag in globalData.processed.byTagLink) {
+                // Filter logika
+                if(selectedTag !== 'all' && tag !== selectedTag) continue;
+                
+                let details = globalData.processed.byTagLink[tag].productDetails;
+                details.forEach(p => {
+                    // Validasi teks platform
+                    let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform : 'Lainnya / Tidak Diketahui';
+                    
+                    if(!platformStats[plat]) {
+                        platformStats[plat] = { komisi: 0, pesanan: 0 };
+                    }
+                    platformStats[plat].komisi += p.komisi;
+                    platformStats[plat].pesanan += 1;
+                });
+            }
+
+            // Ubah object ke array untuk diurutkan
+            let sortedList = Object.keys(platformStats).map(key => {
+                return { name: key, ...platformStats[key] };
+            });
+            
+            // Sort berdasarkan komisi terbesar
+            sortedList.sort((a, b) => b.komisi - a.komisi);
+
+            if(sortedList.length === 0) {
+                container.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Tidak ada data transaksi.</div>';
+                return;
+            }
+
+            // Nilai max untuk mengkalkulasi persentase bar
+            let maxKomisi = sortedList[0].komisi;
+
+            sortedList.forEach((item, index) => {
+                let percentage = maxKomisi > 0 ? (item.komisi / maxKomisi) * 100 : 0;
+                
+                let html = `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold text-dark" style="font-size: 14px;">${index + 1}. ${item.name}</span>
+                        <span class="fw-bold text-success" style="font-size: 14px;">${formatIDR(item.komisi)}</span>
+                    </div>
+                    <div class="text-muted mb-2" style="font-size: 11px;">${item.pesanan.toLocaleString('id-ID')} Pesanan</div>
+                    <div class="progress" style="height: 10px; border-radius: 10px; background-color: #f1f3f5;">
+                        <div class="progress-bar" role="progressbar" style="width: ${percentage}%; background-color: #4b8df8; border-radius: 10px;"></div>
+                    </div>
+                </div>
+                `;
+                container.innerHTML += html;
+            });
         }
 
         function renderDashboard() {
@@ -888,7 +978,6 @@
             tbody.appendChild(trTotal);
         }
 
-        // --- FUNGSI BARU UNTUK IMPORT JSON ---
         function importSavedReportsJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -898,51 +987,36 @@
                 try {
                     const importedData = JSON.parse(e.target.result);
                     
-                    // Validasi file JSON harus berupa array
                     if (!Array.isArray(importedData)) {
                         throw new Error("Format JSON tidak valid. Pastikan ini adalah file hasil Export.");
                     }
 
-                    // Ambil data yang sudah ada di localStorage
                     let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
                     let newAddedCount = 0;
 
-                    // Menggabungkan data (merge)
                     importedData.forEach(newReport => {
-                        // Cari apakah laporan dengan tanggal yang sama sudah ada
                         const existsIndex = currentReports.findIndex(r => r.tanggal === newReport.tanggal);
                         
                         if (existsIndex === -1) {
-                            // Jika belum ada, tambahkan baru
                             currentReports.push(newReport);
                             newAddedCount++;
                         } else {
-                            // Jika sudah ada, timpa data lamanya dengan data dari file JSON
                             currentReports[existsIndex] = newReport;
                             newAddedCount++;
                         }
                     });
 
-                    // Simpan kembali ke localStorage
                     localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
-                    
-                    // Render ulang tabel
                     renderSavedReportsTable();
-                    
-                    // Tampilkan notifikasi sukses
                     showToast(`Impor Berhasil! ${newAddedCount} data laporan berhasil dimasukkan/diperbarui.`, false);
 
                 } catch (error) {
                     showToast("Gagal mengimpor file: " + error.message, true);
                 }
-                
-                // Reset input file agar bisa memilih file yang sama lagi jika diperlukan
                 event.target.value = "";
             };
-            
             reader.readAsText(file);
         }
-        // -------------------------------------
 
         function renderTagLinkTable(filterQuery = '') {
             const tbody = document.getElementById('tableTagLinkBody');
@@ -974,31 +1048,6 @@
 
         function filterTagLink() {
             renderTagLinkTable(document.getElementById('searchTagLink').value);
-        }
-
-        function renderChart() {
-            const ctx = document.getElementById('dashboardChart').getContext('2d');
-            if (activeChart) {
-                activeChart.destroy();
-            }
-            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]).slice(0, 7);
-            activeChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: sortedList.map(i => i.displayTag),
-                    datasets: [
-                        { label: 'Spend', data: sortedList.map(i => i.spend), backgroundColor: '#0d6efd' },
-                        { label: 'Komisi', data: sortedList.map(i => i.komisi), backgroundColor: '#2dc574' },
-                        { label: 'Profit', data: sortedList.map(i => i.profit), backgroundColor: '#ffc107' }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { font: { size: 10 } } } },
-                    scales: { y: { ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } }
-                }
-            });
         }
 
         function downloadCSV(csvContent, filename) {
