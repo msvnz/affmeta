@@ -154,19 +154,39 @@
                         <button class="btn btn-sm btn-success px-3 fw-bold" onclick="exportDashboardCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV Rekap</button>
                     </div>
 
-                    <!-- Widget Sumber Platform -->
-                    <div class="card p-4 shadow-sm border-0 mb-4" style="border-radius: 16px;">
-                        <div class="d-flex align-items-center mb-3">
-                            <i class="fa-solid fa-share-nodes text-primary fs-5 me-3"></i>
-                            <h5 class="fw-bold text-dark mb-0">Sumber Platform</h5>
+                    <!-- Dua Kolom: Widget Platform & Top TagLink -->
+                    <div class="row mb-4">
+                        <!-- Widget Sumber Platform -->
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 16px;">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fa-solid fa-share-nodes text-primary fs-5 me-3"></i>
+                                    <h5 class="fw-bold text-dark mb-0">Sumber Platform</h5>
+                                </div>
+                                
+                                <select id="platformFilter" class="form-select form-select-sm mb-4 text-secondary w-auto" style="border-radius: 8px; min-width: 200px; box-shadow: none; border: 1px solid #dee2e6;" onchange="renderPlatformSource()">
+                                    <option value="all">Semua Tag</option>
+                                </select>
+                            
+                                <div id="platformListContainer">
+                                    <!-- Daftar platform akan dimuat di sini oleh JavaScript -->
+                                </div>
+                            </div>
                         </div>
-                        
-                        <select id="platformFilter" class="form-select form-select-sm mb-4 text-secondary w-auto" style="border-radius: 8px; min-width: 200px; box-shadow: none; border: 1px solid #dee2e6;" onchange="renderPlatformSource()">
-                            <option value="all">Semua Tag</option>
-                        </select>
-                    
-                        <div id="platformListContainer">
-                            <!-- Daftar platform akan dimuat di sini oleh JavaScript -->
+
+                        <!-- Widget Top TagLink -->
+                        <div class="col-md-6">
+                            <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 16px;">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fa-solid fa-medal text-warning fs-5 me-3"></i>
+                                    <h5 class="fw-bold text-dark mb-0">Top TagLink</h5>
+                                </div>
+                                <div class="text-muted mb-4" style="font-size: 12px;">Berdasarkan Komisi Tertinggi</div>
+                                
+                                <div id="topTaglinkContainer">
+                                    <!-- Daftar Top TagLink akan dimuat di sini oleh JavaScript -->
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -194,7 +214,6 @@
                 <section id="menu-savedreports" class="menu-section d-none">
                     <div class="card p-2 shadow-sm border-0 mb-3 text-end">
                         <div class="d-flex justify-content-end gap-2">
-                            <!-- File Input Tersembunyi untuk Import -->
                             <input type="file" id="importJsonFile" accept=".json" style="display: none;" onchange="importSavedReportsJSON(event)">
                             <button class="btn btn-sm btn-info fw-bold text-white" onclick="document.getElementById('importJsonFile').click()">
                                 <i class="fa-solid fa-file-import me-1"></i> Import JSON
@@ -406,9 +425,10 @@
                 renderDashboard();
                 renderTagLinkTable();
                 
-                // Render dropdown dan konten Sumber Platform
+                // Render Widget Dashboard
                 populatePlatformFilter();
                 renderPlatformSource();
+                renderTopTagLink(); // Fungsi baru dipanggil di sini
                 
                 renderSavedReportsTable();
                 
@@ -576,18 +596,15 @@
             return 'Rp ' + Math.round(num).toLocaleString('id-ID');
         }
 
-        // --- FUNGSI BARU: Mengisi Opsi Filter Tag pada Widget Platform ---
         function populatePlatformFilter() {
             const select = document.getElementById('platformFilter');
             select.innerHTML = '<option value="all">Semua Tag</option>';
             
-            // Ambil dan urutkan list berdasarkan komisi tertinggi
             let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
             sortedList.sort((a, b) => b.komisi - a.komisi);
 
             sortedList.forEach(item => {
                 let opt = document.createElement('option');
-                // Value menggunakan ID (lowercase), Text menggunakan aslinya
                 const valKey = Object.keys(globalData.processed.byTagLink).find(key => globalData.processed.byTagLink[key].displayTag === item.displayTag);
                 opt.value = valKey;
                 opt.textContent = item.displayTag;
@@ -595,7 +612,6 @@
             });
         }
 
-        // --- FUNGSI BARU: Render Isi Widget Sumber Platform ---
         function renderPlatformSource() {
             const selectedTag = document.getElementById('platformFilter').value;
             const container = document.getElementById('platformListContainer');
@@ -604,12 +620,10 @@
             let platformStats = {};
             
             for(let tag in globalData.processed.byTagLink) {
-                // Filter logika
                 if(selectedTag !== 'all' && tag !== selectedTag) continue;
                 
                 let details = globalData.processed.byTagLink[tag].productDetails;
                 details.forEach(p => {
-                    // Validasi teks platform
                     let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform : 'Lainnya / Tidak Diketahui';
                     
                     if(!platformStats[plat]) {
@@ -620,23 +634,21 @@
                 });
             }
 
-            // Ubah object ke array untuk diurutkan
             let sortedList = Object.keys(platformStats).map(key => {
                 return { name: key, ...platformStats[key] };
             });
             
-            // Sort berdasarkan komisi terbesar
             sortedList.sort((a, b) => b.komisi - a.komisi);
 
-            if(sortedList.length === 0) {
+            if(sortedList.length === 0 || (sortedList.length === 1 && sortedList[0].komisi === 0)) {
                 container.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Tidak ada data transaksi.</div>';
                 return;
             }
 
-            // Nilai max untuk mengkalkulasi persentase bar
             let maxKomisi = sortedList[0].komisi;
 
             sortedList.forEach((item, index) => {
+                if (item.komisi <= 0) return; // Hide zeros to make it clean
                 let percentage = maxKomisi > 0 ? (item.komisi / maxKomisi) * 100 : 0;
                 
                 let html = `
@@ -648,6 +660,49 @@
                     <div class="text-muted mb-2" style="font-size: 11px;">${item.pesanan.toLocaleString('id-ID')} Pesanan</div>
                     <div class="progress" style="height: 10px; border-radius: 10px; background-color: #f1f3f5;">
                         <div class="progress-bar" role="progressbar" style="width: ${percentage}%; background-color: #4b8df8; border-radius: 10px;"></div>
+                    </div>
+                </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        // --- FUNGSI BARU: Render Isi Widget Top TagLink ---
+        function renderTopTagLink() {
+            const container = document.getElementById('topTaglinkContainer');
+            container.innerHTML = '';
+
+            let sortedList = Object.keys(globalData.processed.byTagLink).map(key => globalData.processed.byTagLink[key]);
+            sortedList.sort((a, b) => b.komisi - a.komisi);
+
+            // Ambil 5 Teratas Saja
+            let top5 = sortedList.slice(0, 5);
+
+            if(top5.length === 0 || top5[0].komisi === 0) {
+                container.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Tidak ada data TagLink.</div>';
+                return;
+            }
+
+            // Nilai max untuk kalkulasi persentase bar
+            let maxKomisi = top5[0].komisi;
+
+            top5.forEach((item, index) => {
+                if (item.komisi <= 0) return; // Lewati yang komisinya 0
+
+                let percentage = maxKomisi > 0 ? (item.komisi / maxKomisi) * 100 : 0;
+                
+                let html = `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold text-dark" style="font-size: 14px;">${index + 1}. ${item.displayTag}</span>
+                        <span class="fw-bold text-success" style="font-size: 14px;">${formatIDR(item.komisi)}</span>
+                    </div>
+                    <div class="text-muted mb-2 d-flex justify-content-between" style="font-size: 11px;">
+                        <span>${item.produkTerjual.toLocaleString('id-ID')} Pesanan</span>
+                        <span class="fw-bold ${item.profit >= 0 ? 'text-success' : 'text-danger'}">Profit: ${formatIDR(item.profit)}</span>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 10px; background-color: #f1f3f5;">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: ${percentage}%; border-radius: 10px;"></div>
                     </div>
                 </div>
                 `;
