@@ -306,7 +306,7 @@
         </div>
     </div>
 
-    <!-- Modal Pop-Up KHUSUS untuk Distribusi Tanggal Klik (Sesuai Tema Bootstrap Utama) -->
+    <!-- Modal Pop-Up Distribusi Tanggal Klik -->
     <div class="modal fade" id="distribusiModal" tabindex="-1" aria-labelledby="distribusiModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg"> 
             <div class="modal-content">
@@ -315,14 +315,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body px-4 py-4">
-                    <div class="mb-4 text-secondary" id="distribusiModalSubTitle" style="font-size: 13px;">
-                        <!-- Tanggal akan diinjeksi disini -->
-                    </div>
-                    
-                    <div id="distribusiModalBody">
-                        <!-- Grafik batang akan di-inject lewat JavaScript -->
-                    </div>
-                    
+                    <div class="mb-4 text-secondary" id="distribusiModalSubTitle" style="font-size: 13px;"></div>
+                    <div id="distribusiModalBody"></div>
                     <div class="mt-4 pt-3 border-top d-flex gap-4">
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge bg-success" style="width: 14px; height: 14px; display: inline-block;"></span>
@@ -336,6 +330,35 @@
                 </div>
                 <div class="modal-footer d-flex justify-content-between align-items-center bg-light">
                     <span class="text-muted fw-bold" style="font-size: 12px;" id="distribusiModalFooterText"></span>
+                    <button type="button" class="btn btn-secondary btn-sm px-4 fw-bold" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BARU: Rincian Klik Shopee -->
+    <div class="modal fade" id="klikShopeeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog"> 
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h6 class="modal-title fw-bold text-dark" id="klikShopeeModalLabel">Rincian Perujuk (Traffic Source)</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <div class="mb-3 text-secondary" id="klikShopeeModalSubTitle" style="font-size: 13px;"></div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped table-bordered mb-0" style="font-size: 12px;">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Sumber Platform / Perujuk</th>
+                                    <th class="text-center" style="width: 120px;">Jumlah Klik</th>
+                                </tr>
+                            </thead>
+                            <tbody id="klikShopeeModalBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary btn-sm px-4 fw-bold" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
@@ -472,6 +495,13 @@
             return isNaN(parsed) ? 0 : parsed;
         }
 
+        function createDataTemplate(displayTag) {
+            return { 
+                displayTag: displayTag, klikMeta: 0, klikShopee: 0, produkTerjual: 0, spend: 0, 
+                komisi: 0, profit: 0, roas: 0, productDetails: [], trafficSources: [], trafficSourceCounts: {}
+            };
+        }
+
         function aggregateData() {
             let dataset = {};
 
@@ -495,9 +525,16 @@
                     if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag === 'unassigned' ? 'unassigned' : rawTag.replace(/-+$/, ""));
                     dataset[tag].klikShopee += 1;
 
+                    // Simpan list perujuk unik (untuk kompatibilitas lama)
                     if (!dataset[tag].trafficSources.includes(trafficSource)) {
                         dataset[tag].trafficSources.push(trafficSource);
                     }
+                    
+                    // Simpan hitungan perujuk
+                    if (!dataset[tag].trafficSourceCounts[trafficSource]) {
+                        dataset[tag].trafficSourceCounts[trafficSource] = 0;
+                    }
+                    dataset[tag].trafficSourceCounts[trafficSource] += 1;
                 });
             }
 
@@ -598,18 +635,10 @@
             globalData.processed.totals = grandTotals;
         }
 
-        function createDataTemplate(displayTag) {
-            return { 
-                displayTag: displayTag, klikMeta: 0, klikShopee: 0, produkTerjual: 0, spend: 0, 
-                komisi: 0, profit: 0, roas: 0, productDetails: [], trafficSources: [] 
-            };
-        }
-
         function formatIDR(num) {
             return 'Rp ' + Math.round(num).toLocaleString('id-ID');
         }
 
-        // --- FUNGSI PARSING TANGGAL KLIK ---
         function getClickDateInfo(clickStr, reportDateStr) {
             if (!clickStr || clickStr === '-' || typeof clickStr !== 'string') {
                 return { label: 'Tidak Diketahui' };
@@ -645,7 +674,6 @@
             return { label: label, diff: diffDays, isSameDay: diffDays === 0, timestamp: clickDate.getTime() };
         }
 
-        // --- FUNGSI MENAMPILKAN MODAL DISTRIBUSI PER TAGLINK ---
         function showDistribusiKlik(dateStr, tagKey) {
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
             let report = currentReports.find(r => r.tanggal === dateStr);
@@ -659,7 +687,6 @@
             let unknownCount = 0;
             let unknownKomisi = 0;
 
-            // Kumpulkan Data hanya untuk TagLink tersebut
             targetItem.productDetails.forEach(p => {
                 totalPesanan++;
                 let info = getClickDateInfo(p.waktuKlik, dateStr);
@@ -670,12 +697,7 @@
                 } else {
                     if (!distribution[info.label]) {
                         distribution[info.label] = {
-                            label: info.label,
-                            diff: info.diff,
-                            isSameDay: info.isSameDay,
-                            timestamp: info.timestamp,
-                            count: 0,
-                            komisi: 0
+                            label: info.label, diff: info.diff, isSameDay: info.isSameDay, timestamp: info.timestamp, count: 0, komisi: 0
                         };
                     }
                     distribution[info.label].count += 1;
@@ -683,17 +705,10 @@
                 }
             });
 
-            let distArray = Object.values(distribution).sort((a, b) => a.timestamp - b.timestamp); // Urut dari terlama
+            let distArray = Object.values(distribution).sort((a, b) => a.timestamp - b.timestamp); 
             
             if (unknownCount > 0) {
-                distArray.push({
-                    label: 'Tidak Diketahui',
-                    diff: null,
-                    isSameDay: false,
-                    timestamp: 9999999999999,
-                    count: unknownCount,
-                    komisi: unknownKomisi
-                });
+                distArray.push({ label: 'Tidak Diketahui', diff: null, isSameDay: false, timestamp: 9999999999999, count: unknownCount, komisi: unknownKomisi });
             }
 
             let maxCount = Math.max(...distArray.map(d => d.count));
@@ -706,7 +721,6 @@
             
             distArray.forEach(item => {
                 let percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-                // Lebar minimum bar agar angka di dalamnya terlihat jelas
                 if (percentage > 0 && percentage < 10) percentage = 10; 
                 
                 let bgClass = item.isSameDay ? 'bg-success' : 'bg-warning'; 
@@ -743,6 +757,56 @@
             document.getElementById('distribusiModalFooterText').innerText = footerText;
 
             new bootstrap.Modal(document.getElementById('distribusiModal')).show();
+        }
+
+        function showKlikShopeeModal(dateStr, tagKey) {
+            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            let report = currentReports.find(r => r.tanggal === dateStr);
+            if(!report) return;
+
+            let targetItem = report.breakdown.find(b => b.displayTag === tagKey);
+            if(!targetItem) return;
+
+            document.getElementById('klikShopeeModalLabel').innerText = `Sumber Klik - ${targetItem.displayTag}`;
+            document.getElementById('klikShopeeModalSubTitle').innerText = `Total ${(targetItem.klikShopee || 0).toLocaleString('id-ID')} klik pada laporan tanggal: ${dateStr}`;
+
+            let tbody = document.getElementById('klikShopeeModalBody');
+            tbody.innerHTML = '';
+
+            let sourceCounts = targetItem.trafficSourceCounts || {};
+            let sources = Object.keys(sourceCounts);
+            
+            // Backup kompatibilitas untuk data tersimpan yang lama
+            if (sources.length === 0 && targetItem.trafficSources && targetItem.trafficSources.length > 0) {
+                targetItem.trafficSources.forEach(src => {
+                    sourceCounts[src] = "N/A";
+                });
+                sources = Object.keys(sourceCounts);
+            }
+
+            if (sources.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" class="text-center text-muted fst-italic py-3">Data perujuk tidak tersedia.</td></tr>`;
+            } else {
+                sources.sort((a, b) => {
+                    let countA = sourceCounts[a] === "N/A" ? 0 : sourceCounts[a];
+                    let countB = sourceCounts[b] === "N/A" ? 0 : sourceCounts[b];
+                    return countB - countA;
+                });
+
+                sources.forEach(src => {
+                    let count = sourceCounts[src];
+                    let countDisplay = count === "N/A" ? `<span class="text-muted fst-italic">Tidak diketahui (Data Lama)</span>` : `<span class="fw-bold">${count.toLocaleString('id-ID')}</span>`;
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="text-wrap">${src}</td>
+                            <td class="text-center">${countDisplay}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            new bootstrap.Modal(document.getElementById('klikShopeeModal')).show();
         }
 
         function populatePlatformFilter() {
@@ -887,7 +951,6 @@
                         <div class="fw-bold fs-6 ${colorClass}">${value}</div>
                     </div>
                 </div>
-            </div>
             `;
         }
 
@@ -925,6 +988,7 @@
                     profit: item.profit,
                     roas: item.roas,
                     trafficSources: item.trafficSources || [],
+                    trafficSourceCounts: item.trafficSourceCounts || {},
                     productDetails: item.productDetails || [] 
                 });
             }
@@ -1058,14 +1122,15 @@
                 
                 let actionBtn = `<button class="btn btn-xs btn-outline-danger py-0 px-2" style="font-size:10px" onclick="showProductDetails('${item.displayTag}', '${dateStr}')"><i class="fa-solid fa-list"></i> Detail</button>`;
                 
-                // Tambahan: Link pemicu modal Distribusi Klik diletakkan di breakdown per taglink
+                // Link pemicu modal Klik Shopee dan Pesanan
                 let orderCountHtml = `<a href="javascript:void(0)" class="text-decoration-none text-primary fw-bold" title="Lihat Distribusi Klik" onclick="showDistribusiKlik('${dateStr}', '${item.displayTag}')">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
+                let clickShopeeHtml = `<a href="javascript:void(0)" class="text-decoration-none text-primary fw-bold" title="Lihat Sumber Platform" onclick="showKlikShopeeModal('${dateStr}', '${item.displayTag}')">${(item.klikShopee || 0).toLocaleString('id-ID')}</a>`;
 
                 tableRowsHtml += `
                     <tr>
                         <td class="fw-bold text-dark">${item.displayTag}</td>
                         <td>${(item.klikMeta || 0).toLocaleString('id-ID')}</td>
-                        <td>${(item.klikShopee || 0).toLocaleString('id-ID')}</td>
+                        <td>${clickShopeeHtml}</td>
                         <td>${orderCountHtml}</td>
                         <td>${formatIDR(item.spend || 0)}</td>
                         <td class="text-primary fw-bold">${formatIDR(item.komisi || 0)}</td>
@@ -1138,10 +1203,7 @@
                     <td class="fw-bold text-orange">${report.tanggal}</td>
                     <td>${(report.klikMeta || 0).toLocaleString('id-ID')}</td>
                     <td>${(report.klikShopee || 0).toLocaleString('id-ID')}</td>
-                    
-                    <!-- Angka Pesanan di rekap dikembalikan ke teks biasa -->
                     <td>${(report.produkTerjual || 0).toLocaleString('id-ID')}</td>
-                    
                     <td>${formatIDR(report.spend || 0)}</td>
                     <td class="text-primary fw-bold">${formatIDR(report.komisi || 0)}</td>
                     <td class="${(report.profit || 0) >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(report.profit || 0)}</td>
@@ -1186,24 +1248,19 @@
             reader.onload = function(e) {
                 try {
                     const importedData = JSON.parse(e.target.result);
-                    
-                    if (!Array.isArray(importedData)) {
-                        throw new Error("Format JSON tidak valid. Pastikan ini adalah file hasil Export.");
-                    }
+                    if (!Array.isArray(importedData)) throw new Error("Format JSON tidak valid.");
 
                     let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
                     let newAddedCount = 0;
 
                     importedData.forEach(newReport => {
                         const existsIndex = currentReports.findIndex(r => r.tanggal === newReport.tanggal);
-                        
                         if (existsIndex === -1) {
                             currentReports.push(newReport);
-                            newAddedCount++;
                         } else {
                             currentReports[existsIndex] = newReport;
-                            newAddedCount++;
                         }
+                        newAddedCount++;
                     });
 
                     localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
