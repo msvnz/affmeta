@@ -70,18 +70,6 @@
             border: 1px solid #dee2e6;
             border-radius: 4px;
         }
-        /* Custom Button Close Modal */
-        .btn-close-custom {
-            background-color: #f1f3f5;
-            border-radius: 50%;
-            padding: 10px;
-            opacity: 0.8;
-            transition: 0.2s;
-        }
-        .btn-close-custom:hover {
-            opacity: 1;
-            background-color: #e2e6ea;
-        }
     </style>
 </head>
 <body>
@@ -166,7 +154,6 @@
                     </div>
 
                     <div class="row mb-4">
-                        <!-- Widget Sumber Platform -->
                         <div class="col-md-6 mb-3 mb-md-0">
                             <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 16px;">
                                 <div class="d-flex align-items-center mb-3">
@@ -180,7 +167,6 @@
                             </div>
                         </div>
 
-                        <!-- Widget Top TagLink -->
                         <div class="col-md-6">
                             <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 16px;">
                                 <div class="d-flex align-items-center mb-3">
@@ -320,39 +306,37 @@
         </div>
     </div>
 
-    <!-- Modal Pop-Up KHUSUS untuk Distribusi Tanggal Klik -->
-    <div class="modal fade" id="distribusiModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg"> 
-            <div class="modal-content" style="border-radius: 12px; border: none; overflow: hidden;">
-                <div class="modal-header border-bottom-0 pb-0 align-items-start px-4 pt-4">
-                    <div class="w-100">
-                        <div class="fw-bold mb-1" style="font-size: 11px; letter-spacing: 1px; color: #d35400;">DISTRIBUSI TANGGAL KLIK</div>
-                        <h4 class="modal-title fw-bold text-dark" id="distribusiModalTitle">Pesanan</h4>
-                        <div class="text-muted mt-1" style="font-size: 12px;">Pada tanggal berapa klik yang menghasilkan pesanan?</div>
+    <!-- Modal Pop-Up KHUSUS untuk Distribusi Tanggal Klik (Sesuai Tema Bootstrap Utama) -->
+    <div class="modal fade" id="distribusiModal" tabindex="-1" aria-labelledby="distribusiModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg"> 
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h6 class="modal-title fw-bold text-dark" id="distribusiModalLabel">Distribusi Tanggal Klik</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 py-4">
+                    <div class="mb-4 text-secondary" id="distribusiModalSubTitle" style="font-size: 13px;">
+                        <!-- Tanggal akan diinjeksi disini -->
                     </div>
-                    <button type="button" class="btn-close btn-close-custom shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                
-                <div class="modal-body px-4 pt-4 pb-2" id="distribusiModalBody">
-                    <!-- Grafik batang akan di-inject lewat JavaScript -->
-                </div>
-                
-                <div class="px-4 pb-4">
-                    <div class="d-flex gap-4">
+                    
+                    <div id="distribusiModalBody">
+                        <!-- Grafik batang akan di-inject lewat JavaScript -->
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-top d-flex gap-4">
                         <div class="d-flex align-items-center gap-2">
-                            <span style="width: 14px; height: 14px; background-color: #2ecc71; border-radius: 3px;"></span>
-                            <span class="text-muted" style="font-size: 12px;">Klik di hari yang sama dengan pesanan</span>
+                            <span class="badge bg-success" style="width: 14px; height: 14px; display: inline-block;"></span>
+                            <span class="text-muted" style="font-size: 11px;">Klik di hari yang sama dengan pesanan</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
-                            <span style="width: 14px; height: 14px; background-color: #fbc02d; border-radius: 3px;"></span>
-                            <span class="text-muted" style="font-size: 12px;">Klik hari sebelumnya</span>
+                            <span class="badge bg-warning" style="width: 14px; height: 14px; display: inline-block;"></span>
+                            <span class="text-muted" style="font-size: 11px;">Klik hari sebelumnya</span>
                         </div>
                     </div>
                 </div>
-
-                <div class="bg-light px-4 py-3 border-top d-flex justify-content-between align-items-center">
-                    <span class="text-muted" style="font-size: 12px;" id="distribusiModalFooterText"></span>
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal" style="background-color: white;">Tutup</button>
+                <div class="modal-footer d-flex justify-content-between align-items-center bg-light">
+                    <span class="text-muted fw-bold" style="font-size: 12px;" id="distribusiModalFooterText"></span>
+                    <button type="button" class="btn btn-secondary btn-sm px-4 fw-bold" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -631,18 +615,17 @@
                 return { label: 'Tidak Diketahui' };
             }
             
-            // Konversi dari "07 Okt 2026" agar bisa dibaca JS Date
             let engDateStr = reportDateStr.replace('Mei', 'May').replace('Agt', 'Aug').replace('Okt', 'Oct').replace('Des', 'Dec');
             let reportDate = new Date(engDateStr); 
             
-            let clickDateStr = clickStr.split(' ')[0]; // Ambil YYYY-MM-DD
+            let clickDateStr = clickStr.split(' ')[0]; 
             let clickDate = new Date(clickDateStr);
             
             if (isNaN(clickDate.getTime())) {
                 let parts = clickDateStr.split(/[-/]/);
                 if (parts.length === 3) {
-                    if (parts[2].length === 4) clickDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`); // DD-MM-YYYY
-                    else if (parts[0].length === 4) clickDate = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`); // YYYY-MM-DD
+                    if (parts[2].length === 4) clickDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`); 
+                    else if (parts[0].length === 4) clickDate = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
                 }
             }
             
@@ -662,42 +645,42 @@
             return { label: label, diff: diffDays, isSameDay: diffDays === 0, timestamp: clickDate.getTime() };
         }
 
-        // --- FUNGSI MENAMPILKAN MODAL DISTRIBUSI ---
-        function showDistribusiKlik(dateStr) {
+        // --- FUNGSI MENAMPILKAN MODAL DISTRIBUSI PER TAGLINK ---
+        function showDistribusiKlik(dateStr, tagKey) {
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
             let report = currentReports.find(r => r.tanggal === dateStr);
             if(!report) return;
+
+            let targetItem = report.breakdown.find(b => b.displayTag === tagKey);
+            if(!targetItem || !targetItem.productDetails) return;
 
             let distribution = {};
             let totalPesanan = 0;
             let unknownCount = 0;
             let unknownKomisi = 0;
 
-            // Kumpulkan Data
-            report.breakdown.forEach(b => {
-                if(!b.productDetails) return;
-                b.productDetails.forEach(p => {
-                    totalPesanan++;
-                    let info = getClickDateInfo(p.waktuKlik, dateStr);
-                    
-                    if (info.label === 'Tidak Diketahui') {
-                        unknownCount++;
-                        unknownKomisi += p.komisi;
-                    } else {
-                        if (!distribution[info.label]) {
-                            distribution[info.label] = {
-                                label: info.label,
-                                diff: info.diff,
-                                isSameDay: info.isSameDay,
-                                timestamp: info.timestamp,
-                                count: 0,
-                                komisi: 0
-                            };
-                        }
-                        distribution[info.label].count += 1;
-                        distribution[info.label].komisi += p.komisi;
+            // Kumpulkan Data hanya untuk TagLink tersebut
+            targetItem.productDetails.forEach(p => {
+                totalPesanan++;
+                let info = getClickDateInfo(p.waktuKlik, dateStr);
+                
+                if (info.label === 'Tidak Diketahui') {
+                    unknownCount++;
+                    unknownKomisi += p.komisi;
+                } else {
+                    if (!distribution[info.label]) {
+                        distribution[info.label] = {
+                            label: info.label,
+                            diff: info.diff,
+                            isSameDay: info.isSameDay,
+                            timestamp: info.timestamp,
+                            count: 0,
+                            komisi: 0
+                        };
                     }
-                });
+                    distribution[info.label].count += 1;
+                    distribution[info.label].komisi += p.komisi;
+                }
             });
 
             let distArray = Object.values(distribution).sort((a, b) => a.timestamp - b.timestamp); // Urut dari terlama
@@ -707,7 +690,7 @@
                     label: 'Tidak Diketahui',
                     diff: null,
                     isSameDay: false,
-                    timestamp: 9999999999999, // Taruh paling bawah
+                    timestamp: 9999999999999,
                     count: unknownCount,
                     komisi: unknownKomisi
                 });
@@ -715,40 +698,42 @@
 
             let maxCount = Math.max(...distArray.map(d => d.count));
             
-            document.getElementById('distribusiModalTitle').innerText = `Pesanan ${dateStr}`;
+            document.getElementById('distribusiModalLabel').innerText = `Distribusi Klik - ${targetItem.displayTag}`;
+            document.getElementById('distribusiModalSubTitle').innerText = `Pesanan masuk pada laporan tanggal: ${dateStr}`;
+            
             let container = document.getElementById('distribusiModalBody');
             container.innerHTML = '';
             
             distArray.forEach(item => {
                 let percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-                if (percentage > 0 && percentage < 8) percentage = 8; // min-width agar angka kelihatan
+                // Lebar minimum bar agar angka di dalamnya terlihat jelas
+                if (percentage > 0 && percentage < 10) percentage = 10; 
                 
-                let color = item.isSameDay ? '#2ecc71' : '#fbc02d'; // hijau : kuning
-                if (item.label === 'Tidak Diketahui') color = '#bdc3c7';
+                let bgClass = item.isSameDay ? 'bg-success' : 'bg-warning'; 
+                if (item.label === 'Tidak Diketahui') bgClass = 'bg-secondary';
 
                 let diffText = '';
                 if (item.isSameDay) {
-                    diffText = `<div style="font-size: 11px; color: #2ecc71; font-weight: 700; margin-top: 2px;">hari ini</div>`;
+                    diffText = `<span class="text-success fw-bold" style="font-size: 10px;">hari ini</span>`;
                 } else if (item.diff !== null && item.diff > 0) {
-                    diffText = `<div style="font-size: 11px; color: #95a5a6; font-weight: 500; margin-top: 2px;">-${item.diff}h</div>`;
+                    diffText = `<span class="text-muted" style="font-size: 10px;">-${item.diff}h</span>`;
                 }
 
                 container.innerHTML += `
-                    <div class="d-flex align-items-center mb-3">
-                        <div style="width: 70px; text-align: right; margin-right: 15px;">
+                    <div class="row align-items-center mb-2">
+                        <div class="col-3 col-md-2 text-end pe-3">
                             <div class="fw-bold text-dark" style="font-size: 13px;">${item.label}</div>
                             ${diffText}
                         </div>
-                        
-                        <div class="flex-grow-1 position-relative" style="background-color: #f1f3f5; border-radius: 8px; height: 38px; display: flex; align-items: center;">
-                            <div style="background-color: ${color}; width: ${percentage}%; height: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px; transition: width 0.5s;">
-                                <span class="text-white fw-bold" style="font-size: 14px;">${item.count}</span>
+                        <div class="col-5 col-md-7 px-0">
+                            <div class="progress" style="height: 28px; border-radius: 4px; background-color: #e9ecef;">
+                                <div class="progress-bar ${bgClass}" role="progressbar" style="width: ${percentage}%; text-align: right; padding-right: 12px;">
+                                    <span class="fw-bold text-white fs-6">${item.count}</span>
+                                </div>
                             </div>
                         </div>
-                        
-                        <!-- Nilai Komisi Rupiah -->
-                        <div style="width: 90px; text-align: right; margin-left: 15px;">
-                            <span class="text-secondary fw-bold" style="font-size: 12px;">${formatIDR(item.komisi)}</span>
+                        <div class="col-4 col-md-3 text-start ps-3">
+                            <span class="fw-bold text-secondary" style="font-size: 13px;">${formatIDR(item.komisi)}</span>
                         </div>
                     </div>
                 `;
@@ -902,6 +887,7 @@
                         <div class="fw-bold fs-6 ${colorClass}">${value}</div>
                     </div>
                 </div>
+            </div>
             `;
         }
 
@@ -1072,12 +1058,15 @@
                 
                 let actionBtn = `<button class="btn btn-xs btn-outline-danger py-0 px-2" style="font-size:10px" onclick="showProductDetails('${item.displayTag}', '${dateStr}')"><i class="fa-solid fa-list"></i> Detail</button>`;
                 
+                // Tambahan: Link pemicu modal Distribusi Klik diletakkan di breakdown per taglink
+                let orderCountHtml = `<a href="javascript:void(0)" class="text-decoration-none text-primary fw-bold" title="Lihat Distribusi Klik" onclick="showDistribusiKlik('${dateStr}', '${item.displayTag}')">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
+
                 tableRowsHtml += `
                     <tr>
                         <td class="fw-bold text-dark">${item.displayTag}</td>
                         <td>${(item.klikMeta || 0).toLocaleString('id-ID')}</td>
                         <td>${(item.klikShopee || 0).toLocaleString('id-ID')}</td>
-                        <td>${(item.produkTerjual || 0).toLocaleString('id-ID')}</td>
+                        <td>${orderCountHtml}</td>
                         <td>${formatIDR(item.spend || 0)}</td>
                         <td class="text-primary fw-bold">${formatIDR(item.komisi || 0)}</td>
                         <td class="fw-bold ${profitColor}">${formatIDR(itemProfit)}</td>
@@ -1150,12 +1139,8 @@
                     <td>${(report.klikMeta || 0).toLocaleString('id-ID')}</td>
                     <td>${(report.klikShopee || 0).toLocaleString('id-ID')}</td>
                     
-                    <!-- Angka Pesanan Dijadikan Tautan agar memanggil Modal Distribusi -->
-                    <td>
-                        <a href="javascript:void(0)" class="text-decoration-none text-primary fw-bold fs-6" title="Lihat Distribusi Klik" onclick="showDistribusiKlik('${report.tanggal}')">
-                            ${(report.produkTerjual || 0).toLocaleString('id-ID')}
-                        </a>
-                    </td>
+                    <!-- Angka Pesanan di rekap dikembalikan ke teks biasa -->
+                    <td>${(report.produkTerjual || 0).toLocaleString('id-ID')}</td>
                     
                     <td>${formatIDR(report.spend || 0)}</td>
                     <td class="text-primary fw-bold">${formatIDR(report.komisi || 0)}</td>
