@@ -306,7 +306,7 @@
         </div>
     </div>
 
-    <!-- MODAL: Distribusi Tanggal & Platform (Desain Nested List Clean) -->
+    <!-- MODAL: Distribusi Tanggal & Platform (Desain Tabel Bawaan) -->
     <div class="modal fade" id="distribusiModal" tabindex="-1" aria-labelledby="distribusiModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg"> 
             <div class="modal-content">
@@ -315,8 +315,10 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body px-4 py-4">
-                    <div class="mb-4 text-secondary" id="distribusiModalSubTitle" style="font-size: 13px;"></div>
-                    <div id="distribusiModalBody"></div>
+                    <div class="mb-3 text-secondary" id="distribusiModalSubTitle" style="font-size: 13px;"></div>
+                    <div class="table-responsive" id="distribusiModalBody">
+                        <!-- Tabel akan digenerate di sini -->
+                    </div>
                 </div>
                 <div class="modal-footer d-flex justify-content-between align-items-center bg-light">
                     <span class="text-muted fw-bold" style="font-size: 12px;" id="distribusiModalFooterText"></span>
@@ -488,8 +490,7 @@
         function createDataTemplate(displayTag) {
             return { 
                 displayTag: displayTag, klikMeta: 0, klikShopee: 0, produkTerjual: 0, spend: 0, 
-                komisi: 0, profit: 0, roas: 0, productDetails: [], trafficSources: [], trafficSourceCounts: {},
-                groupedOrders: {} 
+                komisi: 0, profit: 0, roas: 0, productDetails: [], trafficSources: [], trafficSourceCounts: {}
             };
         }
 
@@ -555,6 +556,7 @@
             }
 
             let totalUniqueOrdersTracker = new Set();
+            let tempGroupedOrders = {}; 
 
             globalData.affiliate.forEach(row => {
                 let tagList = [];
@@ -580,12 +582,16 @@
                 let waktuKlik = row['Waktu Klik'] || row['Waktu Pembuatan Pesanan'] || row['Click Time'] || '-';
                 let platform = row['Platform'] || row['Media Sosial'] || row['Platform Media Sosial'] || row['Social Media'] || '-';
 
-                if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag);
+                if (!dataset[tag]) {
+                    dataset[tag] = createDataTemplate(rawTag);
+                    tempGroupedOrders[tag] = {};
+                }
                 
                 dataset[tag].komisi += komisi;
                 
-                if (!dataset[tag].groupedOrders[orderId]) {
-                    dataset[tag].groupedOrders[orderId] = {
+                // PENGELOMPOKAN ORDER ID UNIK
+                if (!tempGroupedOrders[tag][orderId]) {
+                    tempGroupedOrders[tag][orderId] = {
                         orderId: orderId,
                         names: [],
                         waktuKlik: waktuKlik,
@@ -597,8 +603,8 @@
                     totalUniqueOrdersTracker.add(orderId);
                 }
                 
-                dataset[tag].groupedOrders[orderId].komisi += komisi;
-                dataset[tag].groupedOrders[orderId].names.push(produkName);
+                tempGroupedOrders[tag][orderId].komisi += komisi;
+                tempGroupedOrders[tag][orderId].names.push(produkName);
             });
 
             let grandTotals = createDataTemplate('TOTAL REKAP');
@@ -607,7 +613,7 @@
             for (let tag in dataset) {
                 let d = dataset[tag];
                 
-                d.productDetails = Object.values(d.groupedOrders).map(order => {
+                d.productDetails = Object.values(tempGroupedOrders[tag] || {}).map(order => {
                     let finalName = order.names[0];
                     if (order.names.length > 1) {
                         finalName = `${order.names.length} Item: ` + order.names.join(', ');
@@ -622,8 +628,6 @@
                     };
                 });
                 
-                delete d.groupedOrders;
-
                 d.profit = d.komisi - d.spend;
                 d.roas = d.spend > 0 ? (d.komisi / d.spend) : 0;
 
@@ -679,7 +683,7 @@
             return { label: label, diff: diffDays, isSameDay: diffDays === 0, timestamp: clickDate.getTime() };
         }
 
-        // FUNGSI BARU: Desain Nested List (Tanggal Induk -> Platform Anak)
+        // FUNGSI BARU: Tampilan Tabel Resmi Bawaan (Bordered Table)
         function showDistribusiKlik(dateStr, tagKey) {
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
             let report = currentReports.find(r => r.tanggal === dateStr);
@@ -691,14 +695,13 @@
             let distribution = {};
             let totalPesanan = 0;
 
+            // Data productDetails sudah berupa Unique Order ID berkat logika aggregateData() di atas
             targetItem.productDetails.forEach(p => {
                 totalPesanan++;
                 
-                // 1. Dapatkan label Tanggal
                 let info = getClickDateInfo(p.waktuKlik, dateStr);
                 let dateLabel = info.label;
                 
-                // Jika belum ada tanggal ini, buat struktur induknya
                 if (!distribution[dateLabel]) {
                     distribution[dateLabel] = { 
                         label: dateLabel, 
@@ -714,10 +717,8 @@
                 distribution[dateLabel].count += 1;
                 distribution[dateLabel].komisi += p.komisi;
                 
-                // 2. Dapatkan label Platform (Anak)
                 let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform : 'Lainnya / Tidak Diketahui';
                 
-                // Masukkan hitungan platform ke dalam tanggal yang bersangkutan
                 if (!distribution[dateLabel].platforms[plat]) {
                     distribution[dateLabel].platforms[plat] = { count: 0, komisi: 0 };
                 }
@@ -725,71 +726,67 @@
                 distribution[dateLabel].platforms[plat].komisi += p.komisi;
             });
 
-            // Urutkan tanggal dari yang terdahulu ke yang terbaru (atau sebaliknya)
             let distArray = Object.values(distribution).sort((a, b) => a.timestamp - b.timestamp); 
             
             document.getElementById('distribusiModalLabel').innerText = `Analisis Pesanan - ${targetItem.displayTag}`;
-            document.getElementById('distribusiModalSubTitle').innerText = `Rincian ${totalPesanan} pesanan masuk pada laporan tanggal: ${dateStr}`;
+            document.getElementById('distribusiModalSubTitle').innerText = `Rincian ${totalPesanan} pesanan unik masuk pada laporan tanggal: ${dateStr}`;
             
             let container = document.getElementById('distribusiModalBody');
-            container.innerHTML = '';
             
-            distArray.forEach((item, index) => {
-                let diffText = '';
-                let titleColor = 'text-dark';
-                
-                if (item.label === 'Tidak Diketahui') {
-                    diffText = `<span class="text-muted" style="font-size: 11px;">(data lawas)</span>`;
-                    titleColor = 'text-secondary';
-                } else if (item.isSameDay) {
-                    diffText = `<span class="text-success fw-bold" style="font-size: 11px;">(hari ini)</span>`;
-                    titleColor = 'text-success';
-                } else if (item.diff !== null && item.diff > 0) {
-                    diffText = `<span class="text-muted" style="font-size: 11px;">(-${item.diff}h)</span>`;
-                }
+            // Generate HTML Tabel Klasik (Bordered)
+            let html = `
+            <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 12px; border-color: #dee2e6;">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th>Tanggal Klik</th>
+                        <th>Sumber Platform</th>
+                        <th style="width: 100px;">Pesanan</th>
+                        <th style="width: 130px;">Total Komisi</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
 
-                // Header Induk (Tanggal)
-                let html = `
-                    <div class="mb-3 ${index !== distArray.length - 1 ? 'border-bottom pb-2' : ''}" style="border-style: dashed !important; border-color: #dee2e6 !important;">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <div>
-                                <i class="fa-regular fa-calendar-check ${titleColor} me-1"></i>
-                                <strong class="text-dark" style="font-size: 13px;">${item.label}</strong> ${diffText}
-                            </div>
-                            <div style="font-size: 13px;">
-                                <strong class="text-dark">${item.count} Pesanan</strong> <span class="text-muted mx-1">|</span> <strong class="text-success">${formatIDR(item.komisi)}</strong>
-                            </div>
-                        </div>
-                `;
-
-                // Sorting platform di dalam tanggal tersebut
+            distArray.forEach(item => {
                 let platArray = Object.keys(item.platforms).map(k => {
                     return { name: k, count: item.platforms[k].count, komisi: item.platforms[k].komisi };
                 });
                 platArray.sort((a, b) => b.count - a.count);
 
-                // Konten Anak (Platform)
-                platArray.forEach(plat => {
-                    let platIcon = '⚪';
-                    let pName = plat.name.toLowerCase();
-                    if(pName.includes('facebook') || pName.includes('fb')) platIcon = '🔵';
-                    else if(pName.includes('instagram') || pName.includes('ig')) platIcon = '🟣';
-                    else if(pName.includes('youtube') || pName.includes('yt')) platIcon = '🔴';
-                    else if(pName.includes('tiktok')) platIcon = '⚫';
-                    else if(pName.includes('whatsapp') || pName.includes('wa')) platIcon = '🟢';
-                    else if(pName.includes('twitter') || pName.includes('x')) platIcon = '🐦';
+                let diffText = '';
+                if (item.label === 'Tidak Diketahui') {
+                    diffText = `<br><span class="text-muted" style="font-size: 11px;">(data lawas)</span>`;
+                } else if (item.isSameDay) {
+                    diffText = `<br><span class="text-success fw-bold" style="font-size: 11px;">(hari ini)</span>`;
+                } else if (item.diff !== null && item.diff > 0) {
+                    diffText = `<br><span class="text-muted" style="font-size: 11px;">(-${item.diff}h)</span>`;
+                }
 
+                // Rowspan untuk menggabungkan sel Tanggal Klik agar rapi ke bawah
+                platArray.forEach((plat, index) => {
+                    html += `<tr>`;
+                    if (index === 0) {
+                        html += `<td rowspan="${platArray.length}" class="align-middle text-center bg-light fw-bold">${item.label} ${diffText}</td>`;
+                    }
                     html += `
-                        <div class="d-flex justify-content-between align-items-center text-secondary px-2 mb-1" style="font-size: 12px;">
-                            <div>&nbsp;&nbsp;&nbsp;↳ ${platIcon} ${plat.name}</div>
-                            <div>${plat.count} Pesanan <span class="text-muted mx-1">|</span> ${formatIDR(plat.komisi)}</div>
-                        </div>
-                    `;
+                        <td class="text-start ps-3">${plat.name}</td>
+                        <td class="text-center">${plat.count}</td>
+                        <td class="text-end pe-3">${formatIDR(plat.komisi)}</td>
+                    </tr>`;
                 });
 
-                html += `</div>`;
-                container.innerHTML += html;
+                // Baris Subtotal
+                html += `
+                    <tr class="table-secondary fw-bold" style="border-bottom: 2px solid #adb5bd;">
+                        <td colspan="2" class="text-end pe-3">Subtotal ${item.label}:</td>
+                        <td class="text-center">${item.count}</td>
+                        <td class="text-end pe-3 text-success">${formatIDR(item.komisi)}</td>
+                    </tr>
+                `;
             });
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
 
             let footerText = `Total ${totalPesanan} pesanan dari ${distArray.length} hari klik berbeda`;
             document.getElementById('distribusiModalFooterText').innerText = footerText;
