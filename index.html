@@ -745,33 +745,38 @@
             });
         }
 
-        function renderTopTagLink() {
+       function renderTopTagLink() {
             const container = document.getElementById('topTaglinkContainer');
             container.innerHTML = '';
             // Batas maksimal 10 TagLink
             let top10 = getAggregatedTagLinkData().sort((a, b) => b.komisi - a.komisi).slice(0, 10);
 
-            if(top10.length === 0 || top10[0].komisi === 0) { container.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Tidak ada data.</div>'; return; }
+            if(top10.length === 0 || top10[0].komisi === 0) { 
+                container.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Tidak ada data.</div>'; 
+                return; 
+            }
 
             let maxKomisi = top10[0].komisi;
             top10.forEach((item, index) => {
                 if (item.komisi <= 0) return; 
                 let pct = maxKomisi > 0 ? (item.komisi / maxKomisi) * 100 : 0;
+                
+                // BAGIAN YANG DIUBAH: Tulisan profit dihapus, nilai Rupiah komisi tetap aman di atas.
                 container.innerHTML += `
                 <div class="compact-list-item">
                     <div class="d-flex justify-content-between align-items-center mb-0">
                         <span class="compact-list-title">${index + 1}. ${item.displayTag}</span>
                         <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
                     </div>
-                    <div class="d-flex justify-content-between compact-list-sub">
-                        <span>${item.produkTerjual.toLocaleString('id-ID')} Pesanan</span>
-                        <span class="${item.profit >= 0 ? 'text-success' : 'text-danger'}">Profit: ${formatIDR(item.profit)}</span>
+                    <div class="compact-list-sub">
+                        ${item.produkTerjual.toLocaleString('id-ID')} Pesanan
                     </div>
-                    <div class="compact-progress"><div class="progress-bar bg-warning h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
+                    <div class="compact-progress">
+                        <div class="progress-bar bg-warning h-100" style="width: ${pct}%; border-radius:6px;"></div>
+                    </div>
                 </div>`;
             });
         }
-
         // DESAIN TABEL POP-UP BARU (Rowspan & Baris Pemisah Kosong Tanpa Subtotal)
         function buildOrderAnalysisTableHTML(productDetailsArray) {
             let distribution = {};
