@@ -123,25 +123,25 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="card p-3 shadow-sm border-0">
-                                <label class="form-label fw-bold"><i class="fa-brands fa-facebook text-primary me-1"></i> Meta Ads CSV <span class="text-muted fw-normal">(Opsional)</span></label>
-                                <input type="file" id="fileMeta" class="form-control form-control-sm" accept=".csv">
+                                <label class="form-label fw-bold"><i class="fa-brands fa-facebook text-primary me-1"></i> Meta Ads CSV <span class="text-muted fw-normal">(Opsional / Multi-file)</span></label>
+                                <input type="file" id="fileMeta" class="form-control form-control-sm" accept=".csv" multiple>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="card p-3 shadow-sm border-0">
-                                <label class="form-label fw-bold"><i class="fa-solid fa-globe text-success me-1"></i> Website Click Report CSV <span class="text-muted fw-normal">(Opsional)</span></label>
-                                <input type="file" id="fileWebClick" class="form-control form-control-sm" accept=".csv">
+                                <label class="form-label fw-bold"><i class="fa-solid fa-globe text-success me-1"></i> Website Click Report <span class="text-muted fw-normal">(Opsional / Multi-file)</span></label>
+                                <input type="file" id="fileWebClick" class="form-control form-control-sm" accept=".csv" multiple>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="card p-3 shadow-sm border-0">
-                                <label class="form-label fw-bold"><i class="fa-solid fa-bag-shopping text-danger me-1"></i> Affiliate Commission CSV <span class="text-danger">*</span></label>
-                                <input type="file" id="fileAffiliate" class="form-control form-control-sm" accept=".csv">
+                                <label class="form-label fw-bold"><i class="fa-solid fa-bag-shopping text-danger me-1"></i> Affiliate Commission <span class="text-danger">* (Bisa Multi-file)</span></label>
+                                <input type="file" id="fileAffiliate" class="form-control form-control-sm" accept=".csv" multiple>
                             </div>
                         </div>
                     </div>
                     <div class="text-center mt-4">
-                        <button class="btn btn-primary px-5 fw-bold btn-sm shadow-sm" onclick="processCSV()">ANALISA</button>
+                        <button class="btn btn-primary px-5 fw-bold btn-sm shadow-sm" onclick="processCSV()">ANALISA DATA</button>
                     </div>
                 </section>
 
@@ -184,7 +184,7 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-dark sticky-top">
                                     <tr>
-                                        <th>Tanggal</th>
+                                        <th>Tanggal Laporan</th>
                                         <th>Klik Meta</th>
                                         <th>Klik Shopee</th>
                                         <th class="col-pesanan">Pesanan</th>
@@ -220,7 +220,7 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-dark sticky-top">
                                     <tr>
-                                        <th>Tanggal</th>
+                                        <th>Tanggal Laporan</th>
                                         <th>Klik Meta</th>
                                         <th>Klik Shopee</th>
                                         <th class="col-pesanan">Pesanan</th>
@@ -277,7 +277,7 @@
         </div>
     </div>
 
-    <!-- Modal Pop-Up untuk Detail Produk (Grup per ID Pesanan) -->
+    <!-- Modal Pop-Up untuk Detail Produk -->
     <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl"> 
             <div class="modal-content">
@@ -306,8 +306,8 @@
         </div>
     </div>
 
-    <!-- MODAL: Distribusi Tanggal & Platform (Desain Tabel Bawaan) -->
-    <div class="modal fade" id="distribusiModal" tabindex="-1" aria-labelledby="distribusiModalLabel" aria-hidden="true">
+    <!-- MODAL: Distribusi Tanggal & Platform -->
+    <div class="modal fade" id="distribusiModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg"> 
             <div class="modal-content">
                 <div class="modal-header bg-light">
@@ -316,9 +316,7 @@
                 </div>
                 <div class="modal-body px-4 py-4">
                     <div class="mb-3 text-secondary" id="distribusiModalSubTitle" style="font-size: 13px;"></div>
-                    <div class="table-responsive" id="distribusiModalBody">
-                        <!-- Tabel akan digenerate di sini -->
-                    </div>
+                    <div class="table-responsive" id="distribusiModalBody"></div>
                 </div>
                 <div class="modal-footer d-flex justify-content-between align-items-center bg-light">
                     <span class="text-muted fw-bold" style="font-size: 12px;" id="distribusiModalFooterText"></span>
@@ -360,7 +358,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script>
-        let globalData = { meta: [], webClick: [], affiliate: [], processed: { totals: {}, byTagLink: {} }, metaDate: "Nama file tidak valid" };
+        let globalData = { meta: [], webClick: [], affiliate: [], processed: { totals: {}, byTagLink: {} }, metaDate: "Tanggal Tidak Valid" };
 
         document.getElementById('menu-toggle').addEventListener('click', function () {
             document.getElementById('wrapper').classList.toggle('toggled');
@@ -424,6 +422,19 @@
             });
         }
 
+        async function parseMultipleCSVFiles(fileList, requiredHeaders) {
+            let combinedData = [];
+            for (let i = 0; i < fileList.length; i++) {
+                try {
+                    const data = await parseCSVFile(fileList[i], requiredHeaders);
+                    combinedData = combinedData.concat(data);
+                } catch (e) {
+                    throw new Error(`Gagal membaca file ${fileList[i].name}: ${e}`);
+                }
+            }
+            return combinedData;
+        }
+
         function extractDateFromCommissionFilename(filename) {
             const match = filename.match(/(\d{4})(\d{2})(\d{2})/);
             if (match) {
@@ -431,33 +442,72 @@
                 const monthNumbers = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
                 const monthIndex = parseInt(match[2]) - 1;
                 const month = monthNumbers[monthIndex] || match[2];
-                
                 let day = parseInt(match[3]);
                 let dayString = day < 10 ? '0' + day : day.toString();
-                
                 return `${dayString} ${month} ${year}`;
             }
-            return "Nama file tidak valid";
+            return "Tanggal Tidak Valid";
         }
 
         async function processCSV() {
-            const fileMeta = document.getElementById('fileMeta').files[0];
-            const fileWebClick = document.getElementById('fileWebClick').files[0];
-            const fileAffiliate = document.getElementById('fileAffiliate').files[0];
+            const filesMeta = document.getElementById('fileMeta').files;
+            const filesWebClick = document.getElementById('fileWebClick').files;
+            const filesAffiliate = document.getElementById('fileAffiliate').files;
 
-            if (!fileAffiliate) {
-                showToast("Format CSV tidak dikenali. Harap pilih file Affiliate Commission terlebih dahulu.");
+            if (filesAffiliate.length === 0) {
+                showToast("Format CSV tidak dikenali. Harap pilih setidaknya satu file Affiliate Commission.");
                 return;
             }
 
             document.getElementById('loadingSpinner').classList.remove('d-none');
 
             try {
-                globalData.metaDate = extractDateFromCommissionFilename(fileAffiliate.name);
+                // Memproses Multi-file
+                globalData.meta = filesMeta.length > 0 ? await parseMultipleCSVFiles(filesMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']) : [];
+                globalData.webClick = filesWebClick.length > 0 ? await parseMultipleCSVFiles(filesWebClick, ['Tag_link']) : [];
+                globalData.affiliate = await parseMultipleCSVFiles(filesAffiliate, ['ID Pemesanan', 'Komisi Bersih Affiliate (Rp)', 'Nama Barange', 'Status Pesanan']);
 
-                globalData.meta = fileMeta ? await parseCSVFile(fileMeta, ['Nama iklan', 'Jumlah yang dibelanjakan (IDR)', 'Indikator Hasil', 'Hasil']) : [];
-                globalData.webClick = fileWebClick ? await parseCSVFile(fileWebClick, ['Tag_link']) : [];
-                globalData.affiliate = await parseCSVFile(fileAffiliate, ['ID Pemesanan', 'Komisi Bersih Affiliate (Rp)', 'Nama Barange', 'Status Pesanan']);
+                // Deteksi Tanggal Pintar Langsung dari Data Pesanan (Bukan dari Nama File)
+                let minDate = Infinity;
+                let maxDate = 0;
+                
+                globalData.affiliate.forEach(row => {
+                    let t = row['Waktu Pembuatan Pesanan'] || row['Waktu Klik'] || row['Click Time'];
+                    if (t && typeof t === 'string') {
+                        let dateStr = t.split(' ')[0];
+                        let d = new Date(dateStr);
+                        if (isNaN(d.getTime())) {
+                            let parts = dateStr.split(/[-/]/);
+                            if (parts.length === 3) {
+                                if (parts[2].length === 4) d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`); 
+                                else if (parts[0].length === 4) d = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
+                            }
+                        }
+                        if (!isNaN(d.getTime())) {
+                            if (d.getTime() > maxDate) maxDate = d.getTime();
+                            if (d.getTime() < minDate) minDate = d.getTime();
+                        }
+                    }
+                });
+
+                const formatDateIndo = (timestamp) => {
+                    const monthsIndo = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+                    let d = new Date(timestamp);
+                    let day = d.getDate();
+                    return `${day < 10 ? '0'+day : day} ${monthsIndo[d.getMonth()]} ${d.getFullYear()}`;
+                };
+
+                if (maxDate > 0 && minDate !== Infinity) {
+                    let maxD = formatDateIndo(maxDate);
+                    let minD = formatDateIndo(minDate);
+                    if (maxD === minD) {
+                        globalData.metaDate = maxD; // Jika hanya 1 tanggal
+                    } else {
+                        globalData.metaDate = `${minD} - ${maxD}`; // Jika upload banyak file lintas tanggal
+                    }
+                } else {
+                    globalData.metaDate = extractDateFromCommissionFilename(filesAffiliate[0].name); // Fallback nama file
+                }
 
                 aggregateData();
                 renderDashboard();
@@ -496,6 +546,7 @@
 
         function aggregateData() {
             let dataset = {};
+            let tempGroupedOrders = {}; // Pembuatan wadah keranjang agar tidak error!
 
             if (globalData.webClick && globalData.webClick.length > 0) {
                 globalData.webClick.forEach(row => {
@@ -514,7 +565,12 @@
                         }
                     }
 
-                    if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag === 'unassigned' ? 'unassigned' : rawTag.replace(/-+$/, ""));
+                    if (!dataset[tag]) {
+                        dataset[tag] = createDataTemplate(rawTag === 'unassigned' ? 'unassigned' : rawTag.replace(/-+$/, ""));
+                    }
+                    // Pastikan keranjang Order ID terbuat walaupun dipicu dari WebClick
+                    if (!tempGroupedOrders[tag]) tempGroupedOrders[tag] = {};
+
                     dataset[tag].klikShopee += 1;
 
                     if (!dataset[tag].trafficSources.includes(trafficSource)) {
@@ -549,6 +605,7 @@
 
                     if (!matched && adName !== '') {
                         if (!dataset[adName]) dataset[adName] = createDataTemplate(rawAdName);
+                        if (!tempGroupedOrders[adName]) tempGroupedOrders[adName] = {};
                         dataset[adName].klikMeta += clicks;
                         dataset[adName].spend += spend;
                     }
@@ -556,7 +613,6 @@
             }
 
             let totalUniqueOrdersTracker = new Set();
-            let tempGroupedOrders = {}; 
 
             globalData.affiliate.forEach(row => {
                 let tagList = [];
@@ -582,14 +638,12 @@
                 let waktuKlik = row['Waktu Klik'] || row['Waktu Pembuatan Pesanan'] || row['Click Time'] || '-';
                 let platform = row['Platform'] || row['Media Sosial'] || row['Platform Media Sosial'] || row['Social Media'] || '-';
 
-                if (!dataset[tag]) {
-                    dataset[tag] = createDataTemplate(rawTag);
-                    tempGroupedOrders[tag] = {};
-                }
+                if (!dataset[tag]) dataset[tag] = createDataTemplate(rawTag);
+                if (!tempGroupedOrders[tag]) tempGroupedOrders[tag] = {}; // Bug Fix: Amankan inisiasi keranjang
                 
                 dataset[tag].komisi += komisi;
                 
-                // PENGELOMPOKAN ORDER ID UNIK
+                // MENGGABUNGKAN BARANG BERDASARKAN ID PEMESANAN (ORDER ID)
                 if (!tempGroupedOrders[tag][orderId]) {
                     tempGroupedOrders[tag][orderId] = {
                         orderId: orderId,
@@ -599,7 +653,7 @@
                         komisi: 0,
                         status: status
                     };
-                    dataset[tag].produkTerjual += 1;
+                    dataset[tag].produkTerjual += 1; // Menghitung ID Pemesanan Unik
                     totalUniqueOrdersTracker.add(orderId);
                 }
                 
@@ -613,6 +667,7 @@
             for (let tag in dataset) {
                 let d = dataset[tag];
                 
+                // Ekstrak objek ke array productDetails
                 d.productDetails = Object.values(tempGroupedOrders[tag] || {}).map(order => {
                     let finalName = order.names[0];
                     if (order.names.length > 1) {
@@ -650,11 +705,8 @@
 
         function getClickDateInfo(clickStr, reportDateStr) {
             if (!clickStr || clickStr === '-' || typeof clickStr !== 'string') {
-                return { label: 'Tidak Diketahui' };
+                return { label: 'Tidak Diketahui', isSameDay: false, diff: null, timestamp: 9999999999999 };
             }
-            
-            let engDateStr = reportDateStr.replace('Mei', 'May').replace('Agt', 'Aug').replace('Okt', 'Oct').replace('Des', 'Dec');
-            let reportDate = new Date(engDateStr); 
             
             let clickDateStr = clickStr.split(' ')[0]; 
             let clickDate = new Date(clickDateStr);
@@ -667,23 +719,33 @@
                 }
             }
             
-            if (isNaN(clickDate.getTime()) || isNaN(reportDate.getTime())) return { label: 'Tidak Diketahui' };
+            if (isNaN(clickDate.getTime())) return { label: 'Tidak Diketahui', isSameDay: false, diff: null, timestamp: 9999999999999 };
 
-            reportDate.setHours(0,0,0,0);
-            clickDate.setHours(0,0,0,0);
-            
-            let diffTime = reportDate - clickDate;
-            let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            
             const monthsIndo = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
             let day = clickDate.getDate();
             let dayStr = day < 10 ? '0'+day : day;
             let label = `${dayStr} ${monthsIndo[clickDate.getMonth()]}`;
             
-            return { label: label, diff: diffDays, isSameDay: diffDays === 0, timestamp: clickDate.getTime() };
+            let diffDays = null;
+            let isSameDay = false;
+            
+            // Hanya kalkulasi "-1h" dan "hari ini" jika laporannya cuma 1 tanggal spesifik, bukan rentang (-)
+            if (reportDateStr && !reportDateStr.includes('-')) {
+                let engDateStr = reportDateStr.replace('Mei', 'May').replace('Agt', 'Aug').replace('Okt', 'Oct').replace('Des', 'Dec');
+                let reportDate = new Date(engDateStr); 
+                
+                if (!isNaN(reportDate.getTime())) {
+                    reportDate.setHours(0,0,0,0);
+                    clickDate.setHours(0,0,0,0);
+                    let diffTime = reportDate - clickDate;
+                    diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    isSameDay = (diffDays === 0);
+                }
+            }
+            
+            return { label: label, diff: diffDays, isSameDay: isSameDay, timestamp: clickDate.getTime() };
         }
 
-        // FUNGSI BARU: Tampilan Tabel Resmi Bawaan (Bordered Table)
         function showDistribusiKlik(dateStr, tagKey) {
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
             let report = currentReports.find(r => r.tanggal === dateStr);
@@ -695,7 +757,6 @@
             let distribution = {};
             let totalPesanan = 0;
 
-            // Data productDetails sudah berupa Unique Order ID berkat logika aggregateData() di atas
             targetItem.productDetails.forEach(p => {
                 totalPesanan++;
                 
@@ -707,7 +768,7 @@
                         label: dateLabel, 
                         diff: info.diff, 
                         isSameDay: info.isSameDay, 
-                        timestamp: info.label === 'Tidak Diketahui' ? 9999999999999 : info.timestamp, 
+                        timestamp: info.timestamp, 
                         count: 0, 
                         komisi: 0, 
                         platforms: {} 
@@ -726,14 +787,13 @@
                 distribution[dateLabel].platforms[plat].komisi += p.komisi;
             });
 
-            let distArray = Object.values(distribution).sort((a, b) => a.timestamp - b.timestamp); 
+            let distArray = Object.values(distribution).sort((a, b) => b.timestamp - a.timestamp); // Urut dari tgl paling baru
             
             document.getElementById('distribusiModalLabel').innerText = `Analisis Pesanan - ${targetItem.displayTag}`;
-            document.getElementById('distribusiModalSubTitle').innerText = `Rincian ${totalPesanan} pesanan unik masuk pada laporan tanggal: ${dateStr}`;
+            document.getElementById('distribusiModalSubTitle').innerText = `Rincian ${totalPesanan} pesanan unik untuk laporan tanggal: ${dateStr}`;
             
             let container = document.getElementById('distribusiModalBody');
             
-            // Generate HTML Tabel Klasik (Bordered)
             let html = `
             <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 12px; border-color: #dee2e6;">
                 <thead class="table-light text-center">
@@ -762,7 +822,6 @@
                     diffText = `<br><span class="text-muted" style="font-size: 11px;">(-${item.diff}h)</span>`;
                 }
 
-                // Rowspan untuk menggabungkan sel Tanggal Klik agar rapi ke bawah
                 platArray.forEach((plat, index) => {
                     html += `<tr>`;
                     if (index === 0) {
@@ -775,7 +834,6 @@
                     </tr>`;
                 });
 
-                // Baris Subtotal
                 html += `
                     <tr class="table-secondary fw-bold" style="border-bottom: 2px solid #adb5bd;">
                         <td colspan="2" class="text-end pe-3">Subtotal ${item.label}:</td>
@@ -996,8 +1054,8 @@
             }
 
             const targetDate = globalData.metaDate;
-            if (targetDate === "Nama file tidak valid") {
-                showToast("Gagal Menyimpan! Nama file Affiliate Commission CSV tidak mengandung format tanggal yang valid.", true);
+            if (targetDate === "Tanggal Tidak Valid") {
+                showToast("Gagal Menyimpan! Data laporan tidak valid.", true);
                 return;
             }
 
@@ -1385,7 +1443,8 @@
                 csv += `${globalData.metaDate},"${item.displayTag}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roas.toFixed(2)}\n`;
             });
 
-            downloadCSV(csv, `Analisis_TagLink_Report_${globalData.metaDate}.csv`);
+            let safeDate = String(globalData.metaDate).replace(/[^a-zA-Z0-9 -]/g, "");
+            downloadCSV(csv, `Analisis_TagLink_Report_${safeDate}.csv`);
         }
 
         function exportSavedReportsJSON() {
