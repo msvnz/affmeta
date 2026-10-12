@@ -229,6 +229,33 @@
                 </section>
 
                 <section id="menu-savedreports" class="menu-section d-none">
+                    
+                    <!-- Kotak Akumulasi Sumber Platform dan TagLink (Data Tersimpan) -->
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 12px;">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fa-solid fa-share-nodes text-primary fs-5 me-3"></i>
+                                    <h6 class="fw-bold text-dark mb-0">Sumber Platform (Akumulasi Tersimpan)</h6>
+                                </div>
+                                <div id="savedPlatformListContainer" style="max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 12px;">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fa-solid fa-medal text-warning fs-5 me-3"></i>
+                                        <h6 class="fw-bold text-dark mb-0">Top TagLink (Akumulasi Tersimpan)</h6>
+                                    </div>
+                                    <span class="badge bg-light text-dark border" style="font-size: 10px;">Max 10</span>
+                                </div>
+                                <div id="savedTopTaglinkContainer" style="max-height: 280px; overflow-y: auto; padding-right: 5px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card p-2 shadow-sm border-0 mb-3 text-end">
                         <div class="d-flex justify-content-end gap-2">
                             <input type="file" id="importJsonFile" accept=".json" style="display: none;" onchange="importSavedReportsJSON(event)">
@@ -243,6 +270,7 @@
                             </button>
                         </div>
                     </div>
+                    
                     <div class="card shadow-sm border-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
@@ -465,7 +493,6 @@
             return new Date(parts[2], monthIdx, parseInt(parts[0])).getTime();
         }
 
-        // Format tanggal singat (contoh: 6Okt)
         function getShortDateLabel(rawDateStr) {
             if (!rawDateStr || rawDateStr === '-' || typeof rawDateStr !== 'string') return { label: 'Tidak Diketahui', ts: 0 };
             let dStr = rawDateStr.split(' ')[0]; 
@@ -615,9 +642,7 @@
                     let t = dailyData[day][tag];
                     t.productDetails = Object.values(t.groupedOrders).map(order => {
                         let finalName = order.names[0];
-                        if (order.names.length > 1) {
-                            finalName = `${order.names.length} Item`;
-                        }
+                        if (order.names.length > 1) { finalName = `${order.names.length} Item`; }
                         return { name: finalName, waktuKlik: order.waktuKlik, platform: order.platform, komisi: order.komisi, status: order.status };
                     });
                     delete t.groupedOrders;
@@ -683,7 +708,6 @@
             return `<div class="col"><div class="card p-2 bg-white shadow-sm h-100 kpi-card"><div class="text-muted" style="font-size:10px;">${title}</div><div class="fw-bold fs-6 ${colorClass}">${value}</div></div></div>`;
         }
 
-        // Layout Top TagLink (Max 10) dan Font Dikecilkan
         function getAggregatedTagLinkData() {
             let agg = {};
             for (let day in globalData.processedByDate) {
@@ -707,7 +731,6 @@
             });
         }
 
-        // Layout Platform (Font Dikecilkan & Seimbang)
         function renderPlatformSource() {
             const selectedTag = document.getElementById('platformFilter').value;
             const container = document.getElementById('platformListContainer');
@@ -745,23 +768,18 @@
             });
         }
 
-       function renderTopTagLink() {
+        // TAMPILAN DASHBOARD: HAPUS PROFIT DI TOP TAGLINK
+        function renderTopTagLink() {
             const container = document.getElementById('topTaglinkContainer');
             container.innerHTML = '';
-            // Batas maksimal 10 TagLink
             let top10 = getAggregatedTagLinkData().sort((a, b) => b.komisi - a.komisi).slice(0, 10);
 
-            if(top10.length === 0 || top10[0].komisi === 0) { 
-                container.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Tidak ada data.</div>'; 
-                return; 
-            }
+            if(top10.length === 0 || top10[0].komisi === 0) { container.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Tidak ada data.</div>'; return; }
 
             let maxKomisi = top10[0].komisi;
             top10.forEach((item, index) => {
                 if (item.komisi <= 0) return; 
                 let pct = maxKomisi > 0 ? (item.komisi / maxKomisi) * 100 : 0;
-                
-                // BAGIAN YANG DIUBAH: Tulisan profit dihapus, nilai Rupiah komisi tetap aman di atas.
                 container.innerHTML += `
                 <div class="compact-list-item">
                     <div class="d-flex justify-content-between align-items-center mb-0">
@@ -771,17 +789,15 @@
                     <div class="compact-list-sub">
                         ${item.produkTerjual.toLocaleString('id-ID')} Pesanan
                     </div>
-                    <div class="compact-progress">
-                        <div class="progress-bar bg-warning h-100" style="width: ${pct}%; border-radius:6px;"></div>
-                    </div>
+                    <div class="compact-progress"><div class="progress-bar bg-warning h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
                 </div>`;
             });
         }
-        // DESAIN TABEL POP-UP BARU (Rowspan & Baris Pemisah Kosong Tanpa Subtotal)
+
         function buildOrderAnalysisTableHTML(productDetailsArray) {
             let distribution = {};
             productDetailsArray.forEach(p => {
-                let info = getShortDateLabel(p.waktuKlik); // Format: "6Okt"
+                let info = getShortDateLabel(p.waktuKlik); 
                 if (!distribution[info.label]) { distribution[info.label] = { ts: info.ts, platforms: {} }; }
                 let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform.toLowerCase() : 'lainnya';
                 if (!distribution[info.label].platforms[plat]) distribution[info.label].platforms[plat] = { count: 0, komisi: 0 };
@@ -789,7 +805,6 @@
                 distribution[info.label].platforms[plat].komisi += p.komisi;
             });
 
-            // Urutkan tanggal klik dari yang terlama ke terbaru (seperti screenshot)
             let dateKeys = Object.keys(distribution).sort((a, b) => distribution[a].ts - distribution[b].ts);
             
             let html = `
@@ -802,11 +817,10 @@
             
             dateKeys.forEach((dk, index) => {
                 let platArray = Object.keys(distribution[dk].platforms).map(k => { return { name: k, ...distribution[dk].platforms[k] }; });
-                platArray.sort((a, b) => b.count - a.count); // Platform terbanyak di atas
+                platArray.sort((a, b) => b.count - a.count); 
                 
                 platArray.forEach((plat, pIdx) => {
                     html += `<tr>`;
-                    // Rowspan hanya pada baris pertama di setiap tanggal
                     if (pIdx === 0) { html += `<td rowspan="${platArray.length}" class="align-middle bg-white">${dk}</td>`; }
                     html += `
                         <td class="text-capitalize">${plat.name}</td>
@@ -815,14 +829,12 @@
                     </tr>`;
                 });
                 
-                // Tambahkan spasi baris kosong sebagai pemisah (kecuali tanggal terakhir)
                 if(index < dateKeys.length - 1) { html += `<tr class="spacer-row"><td colspan="4"></td></tr>`; }
             });
             html += `</tbody></table>`;
             return html;
         }
 
-        // Logic Modal Distribusi Klik untuk Data Dashboard Current Upload
         function showDistribusiKlikCurrent(dateStr, tagKey) {
             let details = [];
             if(tagKey === 'ALL') {
@@ -872,7 +884,86 @@
             new bootstrap.Modal(document.getElementById('klikShopeeModal')).show();
         }
 
-        // Saved Reports Functions
+        // FUNGSI BARU: Render Ringkasan Saved Reports (Akumulasi Local Storage)
+        function renderSavedSummaries() {
+            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            
+            let platformStats = {};
+            let taglinkStats = {};
+            
+            currentReports.forEach(report => {
+                if(report.breakdown) {
+                    report.breakdown.forEach(item => {
+                        // Kumpul TagLink
+                        let tag = item.displayTag;
+                        if(!taglinkStats[tag]) {
+                            taglinkStats[tag] = { displayTag: tag, komisi: 0, produkTerjual: 0 };
+                        }
+                        taglinkStats[tag].komisi += item.komisi || 0;
+                        taglinkStats[tag].produkTerjual += item.produkTerjual || 0;
+                        
+                        // Kumpul Platform
+                        if(item.productDetails) {
+                            item.productDetails.forEach(p => {
+                                let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform.toLowerCase() : 'lainnya';
+                                if(!platformStats[plat]) platformStats[plat] = { komisi: 0, pesanan: 0 };
+                                platformStats[plat].komisi += p.komisi || 0;
+                                platformStats[plat].pesanan += 1;
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Render Platform ke UI Saved Reports
+            let platContainer = document.getElementById('savedPlatformListContainer');
+            platContainer.innerHTML = '';
+            let sortedPlat = Object.keys(platformStats).map(key => { return { name: key, ...platformStats[key] }; }).sort((a, b) => b.komisi - a.komisi);
+            
+            if(sortedPlat.length === 0) { 
+                platContainer.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Belum ada data tersimpan.</div>'; 
+            } else {
+                let maxPlatKomisi = sortedPlat[0].komisi;
+                sortedPlat.forEach((item, index) => {
+                    if (item.komisi <= 0) return; 
+                    let pct = maxPlatKomisi > 0 ? (item.komisi / maxPlatKomisi) * 100 : 0;
+                    platContainer.innerHTML += `
+                    <div class="compact-list-item">
+                        <div class="d-flex justify-content-between align-items-center mb-0">
+                            <span class="compact-list-title text-capitalize">${index + 1}. ${item.name}</span>
+                            <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
+                        </div>
+                        <div class="compact-list-sub">${item.pesanan.toLocaleString('id-ID')} Pesanan</div>
+                        <div class="compact-progress"><div class="progress-bar bg-primary h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
+                    </div>`;
+                });
+            }
+
+            // Render TagLink ke UI Saved Reports (Tanpa Profit, Maks 10)
+            let tagContainer = document.getElementById('savedTopTaglinkContainer');
+            tagContainer.innerHTML = '';
+            let sortedTag = Object.values(taglinkStats).sort((a, b) => b.komisi - a.komisi).slice(0, 10);
+            
+            if(sortedTag.length === 0) {
+                tagContainer.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Belum ada data tersimpan.</div>';
+            } else {
+                let maxTagKomisi = sortedTag[0].komisi;
+                sortedTag.forEach((item, index) => {
+                    if (item.komisi <= 0) return; 
+                    let pct = maxTagKomisi > 0 ? (item.komisi / maxTagKomisi) * 100 : 0;
+                    tagContainer.innerHTML += `
+                    <div class="compact-list-item">
+                        <div class="d-flex justify-content-between align-items-center mb-0">
+                            <span class="compact-list-title">${index + 1}. ${item.displayTag}</span>
+                            <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
+                        </div>
+                        <div class="compact-list-sub">${item.produkTerjual.toLocaleString('id-ID')} Pesanan</div>
+                        <div class="compact-progress"><div class="progress-bar bg-warning h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
+                    </div>`;
+                });
+            }
+        }
+
         function saveReportToStorage() {
             let sortedDates = Object.keys(globalData.processedByDate);
             if (sortedDates.length === 0) { showToast("Belum ada data."); return; }
@@ -939,7 +1030,11 @@
             parentRow.parentNode.insertBefore(detailRow, parentRow.nextSibling);
         }
 
+        // Modifikasi Render Saved Reports untuk sekalian me-render widget akumulasinya
         function renderSavedReportsTable() {
+            // Update widget List Sumber Platform & TagLink setiap kali tabel dirender
+            renderSavedSummaries();
+
             const tbody = document.getElementById('tableSavedReportsBody');
             if(!tbody) return;
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
@@ -958,7 +1053,6 @@
             tbody.innerHTML += `<tr class="table-secondary fw-bold border-top border-dark"><td class="text-dark">TOTAL KESELURUHAN</td><td>${tKM.toLocaleString('id-ID')}</td><td>${tKS.toLocaleString('id-ID')}</td><td>${tP.toLocaleString('id-ID')}</td><td>${formatIDR(tS)}</td><td class="text-primary">${formatIDR(tK)}</td><td class="${tPr>=0?'text-success':'text-danger'}">${formatIDR(tPr)}</td><td>${totalRoas.toFixed(2)}x</td><td></td></tr>`;
         }
 
-        // Logic Modal Distribusi Klik (Desain Rowspan) untuk Saved Reports
         function showDistribusiKlikSaved(dateStr, tagKey) {
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
             let report = currentReports.find(r => r.tanggal === dateStr);
@@ -1025,7 +1119,6 @@
         }
         function filterTagLink() { renderTagLinkTable(document.getElementById('searchTagLink').value); }
 
-        // Export/Import Tools
         function downloadCSV(csvContent, filename) {
             const link = document.createElement("a");
             const url = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
