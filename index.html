@@ -255,36 +255,53 @@
                         </div>
                     </div>
 
-                    <!-- Kotak KPI Saved Reports (Akan terupdate oleh Filter) -->
+                    <!-- Kotak KPI Saved Reports -->
                     <div class="row row-cols-2 row-cols-md-4 row-cols-xl-7 g-2 mb-4" id="saved-kpi-container"></div>
 
-                    <!-- Kotak Akumulasi Sumber Platform dan TagLink -->
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 12px;">
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fa-solid fa-share-nodes text-primary fs-5 me-3"></i>
-                                        <h6 class="fw-bold text-dark mb-0">Sumber Platform <br><small class="text-muted fw-normal" style="font-size: 10px;">(Akumulasi Tersimpan)</small></h6>
-                                    </div>
+                    <!-- 3 Kotak Ringkasan Berjejer di Satu Baris -->
+                    <div class="row mb-4 g-3">
+                        <!-- 1. Sumber Platform -->
+                        <div class="col-md-4">
+                            <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fa-solid fa-share-nodes text-primary fs-6 me-2"></i>
+                                    <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Sumber Platform <br><small class="text-muted fw-normal" style="font-size: 9px;">(Akumulasi Tersimpan)</small></h6>
                                 </div>
-                                <select id="savedPlatformFilter" class="form-select form-select-sm mb-3 text-secondary w-auto" style="border-radius: 6px; box-shadow: none; border: 1px solid #dee2e6; font-size:11px;" onchange="renderSavedSummaries(true, false)">
+                                <select id="savedPlatformFilter" class="form-select form-select-sm mb-2 text-secondary w-auto" style="border-radius: 6px; box-shadow: none; border: 1px solid #dee2e6; font-size:11px;" onchange="renderSavedSummaries(true, false)">
                                     <option value="all">Semua TagLink</option>
                                 </select>
-                                <div id="savedPlatformListContainer" style="max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
+                                <div id="savedPlatformListContainer" style="max-height: 230px; overflow-y: auto; padding-right: 5px;"></div>
                             </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 12px;">
-                                <div class="d-flex align-items-center justify-content-between mb-3">
+                        <!-- 2. Top TagLink -->
+                        <div class="col-md-4">
+                            <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
                                     <div class="d-flex align-items-center">
-                                        <i class="fa-solid fa-medal text-warning fs-5 me-3"></i>
-                                        <h6 class="fw-bold text-dark mb-0">Top TagLink <br><small class="text-muted fw-normal" style="font-size: 10px;">(Akumulasi Tersimpan)</small></h6>
+                                        <i class="fa-solid fa-medal text-warning fs-6 me-2"></i>
+                                        <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Top TagLink <br><small class="text-muted fw-normal" style="font-size: 9px;">(Akumulasi Tersimpan)</small></h6>
                                     </div>
-                                    <span class="badge bg-light text-dark border" style="font-size: 10px;">Max 10</span>
+                                    <span class="badge bg-light text-dark border" style="font-size: 9px;">Max 10</span>
                                 </div>
-                                <div id="savedTopTaglinkContainer" style="max-height: 280px; overflow-y: auto; padding-right: 5px;"></div>
+                                <div style="height: 31px;" class="mb-2"></div> <!-- Spacer penyeimbang tinggi dengan dropdown sebelah -->
+                                <div id="savedTopTaglinkContainer" style="max-height: 230px; overflow-y: auto; padding-right: 5px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Laporan Meta Ads -->
+                        <div class="col-md-4">
+                            <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fa-brands fa-facebook text-primary fs-6 me-2"></i>
+                                    <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Laporan Meta Ads <br><small class="text-muted fw-normal" style="font-size: 9px;">(Spend & Klik)</small></h6>
+                                </div>
+                                <select id="savedMetaAdSetFilter" class="form-select form-select-sm mb-2 text-secondary w-auto" style="border-radius: 6px; box-shadow: none; border: 1px solid #dee2e6; font-size:11px;" onchange="renderSavedSummaries(true, false)">
+                                    <option value="all">Semua Set Iklan</option>
+                                </select>
+                                <div id="savedMetaAdsContainer" class="d-flex flex-column justify-content-center" style="min-height: 190px;">
+                                    <!-- Rendered dynamically -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -518,7 +535,6 @@
             return `${day < 10 ? '0'+day : day} ${monthsIndo[d.getMonth()]} ${d.getFullYear()}`;
         }
 
-        // Helper timestamp untuk mengurutkan atau membandingkan tanggal "05 Okt 2026"
         function getTimestampFromIndoDate(indoDateStr) {
             if(indoDateStr === "Tidak Diketahui") return 0;
             const monthsIndo = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
@@ -565,7 +581,7 @@
                 populatePlatformFilter();
                 renderPlatformSource();
                 renderTopTagLink();
-                renderSavedReportsTable(); // juga akan merender SavedSummaries secara otomatis
+                renderSavedReportsTable();
                 switchMenu('dashboard');
             } catch (error) {
                 showToast(error);
@@ -611,14 +627,27 @@
                 });
             }
 
+            // Meta Ads (Merekam juga Nama Set Iklan)
+            let dailyMetaAds = {}; // day -> { adSetKey: { name, spend, clicks } }
             if (globalData.meta.length > 0) {
                 globalData.meta.forEach(row => {
                     let day = formatStandardDate(row['Awal pelaporan'] || row['Reporting Starts']);
                     if(day === "Tidak Diketahui") return;
                     let rawAdName = row['Nama iklan'] || row['Ad name'] || 'Unknown';
                     let adName = rawAdName.toLowerCase().trim();
+                    let adSetName = row['Nama set iklan'] || row['Ad set name'] || 'Unknown AdSet';
+                    let adSetKey = adSetName.toLowerCase().trim();
                     let clicks = parseInt(row['Hasil'] || row['Results'] || 0) || 0; 
                     let spend = cleanNumber(row['Jumlah yang dibelanjakan (IDR)'] || row['Amount spent (IDR)']);
+
+                    // Rekap harian untuk Meta Ads Details
+                    if(!dailyMetaAds[day]) dailyMetaAds[day] = {};
+                    if(!dailyMetaAds[day][adSetKey]) {
+                        dailyMetaAds[day][adSetKey] = { displayName: adSetName, spend: 0, clicks: 0 };
+                    }
+                    dailyMetaAds[day][adSetKey].spend += spend;
+                    dailyMetaAds[day][adSetKey].clicks += clicks;
+
                     let matched = false;
                     if (dailyData[day]) {
                         for (let tag in dailyData[day]) {
@@ -634,6 +663,8 @@
                     }
                 });
             }
+
+            globalData.metaAdsByDate = dailyMetaAds;
 
             globalData.affiliate.forEach(row => {
                 let day = formatStandardDate(row['Waktu Pemesanan'] || row['Order Time']);
@@ -686,7 +717,11 @@
                 dayTotals.profit = dayTotals.komisi - dayTotals.spend;
                 dayTotals.roas = dayTotals.spend > 0 ? (dayTotals.komisi / dayTotals.spend) : 0;
                 
-                globalData.processedByDate[day] = { totals: dayTotals, byTagLink: dailyData[day] };
+                globalData.processedByDate[day] = { 
+                    totals: dayTotals, 
+                    byTagLink: dailyData[day],
+                    metaAdsDetails: dailyMetaAds[day] || {} 
+                };
                 grandKlikMeta += dayTotals.klikMeta; grandKlikShopee += dayTotals.klikShopee; grandPesanan += dayTotals.produkTerjual; grandSpend += dayTotals.spend; grandKomisi += dayTotals.komisi;
             }
 
@@ -916,7 +951,7 @@
         }
 
         // ==========================================
-        // FITUR BARU: FILTER KALENDER SAVED REPORTS
+        // FITUR SAVED REPORTS DENGAN KOTAK META ADS
         // ==========================================
         function resetSavedFilter() {
             document.getElementById('filterStartDate').value = '';
@@ -924,13 +959,15 @@
             if(document.getElementById('savedPlatformFilter')) {
                 document.getElementById('savedPlatformFilter').value = 'all';
             }
+            if(document.getElementById('savedMetaAdSetFilter')) {
+                document.getElementById('savedMetaAdSetFilter').value = 'all';
+            }
             renderSavedSummaries(false, true);
         }
 
         function renderSavedSummaries(isDropdownChange = false, isDateFilter = false) {
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
             
-            // Baca input tanggal
             let startInput = document.getElementById('filterStartDate').value;
             let endInput = document.getElementById('filterEndDate').value;
             let startTs = 0;
@@ -942,11 +979,9 @@
             }
             if (endInput) {
                 let p = endInput.split('-');
-                // Set batas akhir hingga 23:59:59 pada hari tersebut
                 endTs = new Date(p[0], p[1]-1, p[2], 23, 59, 59).getTime(); 
             }
 
-            // Saring data laporan berdasarkan rentang tanggal
             let filteredReports = currentReports.filter(report => {
                 let rTs = getTimestampFromIndoDate(report.tanggal);
                 return rTs >= startTs && rTs <= endTs;
@@ -954,34 +989,46 @@
 
             let platformStats = {};
             let taglinkStats = {};
-            
-            // Variabel untuk KPI Cards
+            let metaAdSetStats = {}; // adSetKey -> { displayName, spend, clicks }
+
             let kpiKM = 0, kpiKS = 0, kpiP = 0, kpiS = 0, kpiK = 0;
 
-            const filterElement = document.getElementById('savedPlatformFilter');
-            const selectedTag = filterElement ? filterElement.value : 'all';
+            const platformFilterEl = document.getElementById('savedPlatformFilter');
+            const selectedPlatformTag = platformFilterEl ? platformFilterEl.value : 'all';
+
+            const metaFilterEl = document.getElementById('savedMetaAdSetFilter');
+            const selectedMetaAdSet = metaFilterEl ? metaFilterEl.value : 'all';
             
             filteredReports.forEach(report => {
-                // Kalkulasi KPI
                 kpiKM += report.klikMeta || 0;
                 kpiKS += report.klikShopee || 0;
                 kpiP += report.produkTerjual || 0;
                 kpiS += report.spend || 0;
                 kpiK += report.komisi || 0;
 
+                // Akumulasi Meta Ads Details jika tersedia di data tersimpan
+                if(report.metaAdsDetails) {
+                    for(let adSetKey in report.metaAdsDetails) {
+                        let adData = report.metaAdsDetails[adSetKey];
+                        if(!metaAdSetStats[adSetKey]) {
+                            metaAdSetStats[adSetKey] = { displayName: adData.displayName || adSetKey, spend: 0, clicks: 0 };
+                        }
+                        metaAdSetStats[adSetKey].spend += adData.spend || 0;
+                        metaAdSetStats[adSetKey].clicks += adData.clicks || 0;
+                    }
+                }
+
                 if(report.breakdown) {
                     report.breakdown.forEach(item => {
                         let tag = item.displayTag;
                         
-                        // Kumpul TagLink (Tidak terpengaruh dropdown filter platform, tapi terpengaruh filter tanggal)
                         if(!taglinkStats[tag]) {
                             taglinkStats[tag] = { displayTag: tag, komisi: 0, produkTerjual: 0 };
                         }
                         taglinkStats[tag].komisi += item.komisi || 0;
                         taglinkStats[tag].produkTerjual += item.produkTerjual || 0;
                         
-                        // Kumpul Platform berdasarkan filter dropdown yang dipilih
-                        if(selectedTag === 'all' || selectedTag === tag) {
+                        if(selectedPlatformTag === 'all' || selectedPlatformTag === tag) {
                             if(item.productDetails) {
                                 item.productDetails.forEach(p => {
                                     let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform.toLowerCase() : 'lainnya';
@@ -995,11 +1042,9 @@
                 }
             });
 
-            // Hitung Profit & ROAS untuk KPI
             let kpiProfit = kpiK - kpiS;
             let kpiRoas = kpiS > 0 ? (kpiK / kpiS) : 0;
 
-            // Render KPI Cards (Menyesuaikan Tema)
             document.getElementById('saved-kpi-container').innerHTML = `
                 ${createKPICard('Spend Meta', formatIDR(kpiS))}
                 ${createKPICard('Klik Meta', kpiKM.toLocaleString('id-ID'))}
@@ -1010,31 +1055,35 @@
                 ${createKPICard('ROAS', kpiRoas.toFixed(2) + 'x')}
             `;
 
-            // Update isi opsi Dropdown HANYA jika dipanggil dari awal/filter tanggal (bukan saat user klik dropdown platform)
-            if(!isDropdownChange && filterElement) {
-                let currentVal = filterElement.value;
-                filterElement.innerHTML = '<option value="all">Semua TagLink</option>';
-                let sortedTagForDropdown = Object.values(taglinkStats).sort((a, b) => b.komisi - a.komisi);
-                
-                sortedTagForDropdown.forEach(item => {
-                    let opt = document.createElement('option'); 
-                    opt.value = item.displayTag; 
-                    opt.textContent = item.displayTag; 
-                    filterElement.appendChild(opt);
+            // Update Dropdown Platform
+            if(!isDropdownChange && platformFilterEl) {
+                let currentVal = platformFilterEl.value;
+                platformFilterEl.innerHTML = '<option value="all">Semua TagLink</option>';
+                Object.values(taglinkStats).sort((a, b) => b.komisi - a.komisi).forEach(item => {
+                    let opt = document.createElement('option'); opt.value = item.displayTag; opt.textContent = item.displayTag; platformFilterEl.appendChild(opt);
                 });
-
-                let exists = Array.from(filterElement.options).some(opt => opt.value === currentVal);
-                if(exists) filterElement.value = currentVal;
-                else filterElement.value = 'all';
+                if(Array.from(platformFilterEl.options).some(o => o.value === currentVal)) platformFilterEl.value = currentVal;
+                else platformFilterEl.value = 'all';
             }
 
-            // Render Platform ke UI Saved Reports
+            // Update Dropdown Meta Ad Set
+            if(!isDropdownChange && metaFilterEl) {
+                let currentMetaVal = metaFilterEl.value;
+                metaFilterEl.innerHTML = '<option value="all">Semua Set Iklan</option>';
+                Object.keys(metaAdSetStats).sort().forEach(key => {
+                    let opt = document.createElement('option'); opt.value = key; opt.textContent = metaAdSetStats[key].displayName; metaFilterEl.appendChild(opt);
+                });
+                if(Array.from(metaFilterEl.options).some(o => o.value === currentMetaVal)) metaFilterEl.value = currentMetaVal;
+                else metaFilterEl.value = 'all';
+            }
+
+            // 1. Render Sumber Platform
             let platContainer = document.getElementById('savedPlatformListContainer');
             platContainer.innerHTML = '';
             let sortedPlat = Object.keys(platformStats).map(key => { return { name: key, ...platformStats[key] }; }).sort((a, b) => b.komisi - a.komisi);
             
             if(sortedPlat.length === 0) { 
-                platContainer.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Belum ada data pada rentang ini.</div>'; 
+                platContainer.innerHTML = '<div class="text-muted text-center py-4 fst-italic" style="font-size:11px;">Belum ada data pada rentang ini.</div>'; 
             } else {
                 let maxPlatKomisi = sortedPlat[0].komisi;
                 sortedPlat.forEach((item, index) => {
@@ -1052,14 +1101,14 @@
                 });
             }
 
-            // Render Top TagLink ke UI Saved Reports (Maksimal 10)
+            // 2. Render Top TagLink (Maks 10)
             if(!isDropdownChange) {
                 let tagContainer = document.getElementById('savedTopTaglinkContainer');
                 tagContainer.innerHTML = '';
                 let sortedTag = Object.values(taglinkStats).sort((a, b) => b.komisi - a.komisi).slice(0, 10);
                 
                 if(sortedTag.length === 0) {
-                    tagContainer.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Belum ada data pada rentang ini.</div>';
+                    tagContainer.innerHTML = '<div class="text-muted text-center py-4 fst-italic" style="font-size:11px;">Belum ada data pada rentang ini.</div>';
                 } else {
                     let maxTagKomisi = sortedTag[0].komisi;
                     sortedTag.forEach((item, index) => {
@@ -1077,6 +1126,32 @@
                     });
                 }
             }
+
+            // 3. Render Laporan Meta Ads (Spend & Klik sesuai Filter Set Iklan)
+            let metaContainer = document.getElementById('savedMetaAdsContainer');
+            let displaySpend = 0;
+            let displayClicks = 0;
+
+            if(selectedMetaAdSet === 'all') {
+                for(let k in metaAdSetStats) {
+                    displaySpend += metaAdSetStats[k].spend;
+                    displayClicks += metaAdSetStats[k].clicks;
+                }
+            } else if(metaAdSetStats[selectedMetaAdSet]) {
+                displaySpend = metaAdSetStats[selectedMetaAdSet].spend;
+                displayClicks = metaAdSetStats[selectedMetaAdSet].clicks;
+            }
+
+            metaContainer.innerHTML = `
+                <div class="p-3 bg-light rounded border mb-2 text-center">
+                    <div class="text-muted" style="font-size: 11px;">Total Spend (IDR)</div>
+                    <div class="fw-bold fs-5 text-dark">${formatIDR(displaySpend)}</div>
+                </div>
+                <div class="p-3 bg-light rounded border text-center">
+                    <div class="text-muted" style="font-size: 11px;">Total Klik Tautan</div>
+                    <div class="fw-bold fs-5 text-primary">${displayClicks.toLocaleString('id-ID')}</div>
+                </div>
+            `;
         }
 
         function saveReportToStorage() {
@@ -1087,6 +1162,7 @@
             sortedDates.forEach(day => {
                 if (!currentReports.some(r => r.tanggal === day)) {
                     let totals = globalData.processedByDate[day].totals;
+                    let metaDetails = globalData.processedByDate[day].metaAdsDetails || {};
                     let breakdown = [];
                     for (let tag in globalData.processedByDate[day].byTagLink) {
                         let item = globalData.processedByDate[day].byTagLink[tag];
@@ -1096,7 +1172,7 @@
                             trafficSourceCounts: item.trafficSourceCounts || {}, productDetails: item.productDetails || [] 
                         });
                     }
-                    currentReports.push({ tanggal: day, ...totals, breakdown: breakdown });
+                    currentReports.push({ tanggal: day, ...totals, metaAdsDetails: metaDetails, breakdown: breakdown });
                     savedCount++;
                 }
             });
@@ -1146,7 +1222,6 @@
         }
 
         function renderSavedReportsTable() {
-            // Update widget Filter, List Sumber Platform & TagLink (Akumulasi Local Storage)
             renderSavedSummaries(false, false);
 
             const tbody = document.getElementById('tableSavedReportsBody');
