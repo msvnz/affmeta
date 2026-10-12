@@ -238,6 +238,10 @@
                                     <i class="fa-solid fa-share-nodes text-primary fs-5 me-3"></i>
                                     <h6 class="fw-bold text-dark mb-0">Sumber Platform (Akumulasi Tersimpan)</h6>
                                 </div>
+                                <!-- DROPDOWN FILTER DITAMBAHKAN DI SINI -->
+                                <select id="savedPlatformFilter" class="form-select form-select-sm mb-3 text-secondary w-auto" style="border-radius: 6px; box-shadow: none; border: 1px solid #dee2e6; font-size:11px;" onchange="renderSavedSummaries(true)">
+                                    <option value="all">Semua TagLink</option>
+                                </select>
                                 <div id="savedPlatformListContainer" style="max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
                             </div>
                         </div>
@@ -768,7 +772,6 @@
             });
         }
 
-        // TAMPILAN DASHBOARD: HAPUS PROFIT DI TOP TAGLINK
         function renderTopTagLink() {
             const container = document.getElementById('topTaglinkContainer');
             container.innerHTML = '';
@@ -884,36 +887,61 @@
             new bootstrap.Modal(document.getElementById('klikShopeeModal')).show();
         }
 
-        // FUNGSI BARU: Render Ringkasan Saved Reports (Akumulasi Local Storage)
-        function renderSavedSummaries() {
+        // FUNGSI BARU (DENGAN FILTER DROPDOWN): Render Ringkasan Saved Reports
+        function renderSavedSummaries(isDropdownChange = false) {
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
             
             let platformStats = {};
             let taglinkStats = {};
             
+            const filterElement = document.getElementById('savedPlatformFilter');
+            const selectedTag = filterElement ? filterElement.value : 'all';
+            
             currentReports.forEach(report => {
                 if(report.breakdown) {
                     report.breakdown.forEach(item => {
-                        // Kumpul TagLink
                         let tag = item.displayTag;
+                        
+                        // Kumpul TagLink (Tidak terpengaruh dropdown filter)
                         if(!taglinkStats[tag]) {
                             taglinkStats[tag] = { displayTag: tag, komisi: 0, produkTerjual: 0 };
                         }
                         taglinkStats[tag].komisi += item.komisi || 0;
                         taglinkStats[tag].produkTerjual += item.produkTerjual || 0;
                         
-                        // Kumpul Platform
-                        if(item.productDetails) {
-                            item.productDetails.forEach(p => {
-                                let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform.toLowerCase() : 'lainnya';
-                                if(!platformStats[plat]) platformStats[plat] = { komisi: 0, pesanan: 0 };
-                                platformStats[plat].komisi += p.komisi || 0;
-                                platformStats[plat].pesanan += 1;
-                            });
+                        // Kumpul Platform berdasarkan filter yang dipilih
+                        if(selectedTag === 'all' || selectedTag === tag) {
+                            if(item.productDetails) {
+                                item.productDetails.forEach(p => {
+                                    let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform.toLowerCase() : 'lainnya';
+                                    if(!platformStats[plat]) platformStats[plat] = { komisi: 0, pesanan: 0 };
+                                    platformStats[plat].komisi += p.komisi || 0;
+                                    platformStats[plat].pesanan += 1;
+                                });
+                            }
                         }
                     });
                 }
             });
+
+            // Update isi opsi Dropdown HANYA jika dipanggil dari awal render (bukan saat user klik dropdown)
+            if(!isDropdownChange && filterElement) {
+                let currentVal = filterElement.value;
+                filterElement.innerHTML = '<option value="all">Semua TagLink</option>';
+                let sortedTagForDropdown = Object.values(taglinkStats).sort((a, b) => b.komisi - a.komisi);
+                
+                sortedTagForDropdown.forEach(item => {
+                    let opt = document.createElement('option'); 
+                    opt.value = item.displayTag; 
+                    opt.textContent = item.displayTag; 
+                    filterElement.appendChild(opt);
+                });
+
+                // Pertahankan pilihan sebelumnya jika masih ada dalam daftar
+                let exists = Array.from(filterElement.options).some(opt => opt.value === currentVal);
+                if(exists) filterElement.value = currentVal;
+                else filterElement.value = 'all';
+            }
 
             // Render Platform ke UI Saved Reports
             let platContainer = document.getElementById('savedPlatformListContainer');
@@ -939,28 +967,30 @@
                 });
             }
 
-            // Render TagLink ke UI Saved Reports (Tanpa Profit, Maks 10)
-            let tagContainer = document.getElementById('savedTopTaglinkContainer');
-            tagContainer.innerHTML = '';
-            let sortedTag = Object.values(taglinkStats).sort((a, b) => b.komisi - a.komisi).slice(0, 10);
-            
-            if(sortedTag.length === 0) {
-                tagContainer.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Belum ada data tersimpan.</div>';
-            } else {
-                let maxTagKomisi = sortedTag[0].komisi;
-                sortedTag.forEach((item, index) => {
-                    if (item.komisi <= 0) return; 
-                    let pct = maxTagKomisi > 0 ? (item.komisi / maxTagKomisi) * 100 : 0;
-                    tagContainer.innerHTML += `
-                    <div class="compact-list-item">
-                        <div class="d-flex justify-content-between align-items-center mb-0">
-                            <span class="compact-list-title">${index + 1}. ${item.displayTag}</span>
-                            <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
-                        </div>
-                        <div class="compact-list-sub">${item.produkTerjual.toLocaleString('id-ID')} Pesanan</div>
-                        <div class="compact-progress"><div class="progress-bar bg-warning h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
-                    </div>`;
-                });
+            // Render Top TagLink ke UI Saved Reports (Maksimal 10)
+            if(!isDropdownChange) {
+                let tagContainer = document.getElementById('savedTopTaglinkContainer');
+                tagContainer.innerHTML = '';
+                let sortedTag = Object.values(taglinkStats).sort((a, b) => b.komisi - a.komisi).slice(0, 10);
+                
+                if(sortedTag.length === 0) {
+                    tagContainer.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Belum ada data tersimpan.</div>';
+                } else {
+                    let maxTagKomisi = sortedTag[0].komisi;
+                    sortedTag.forEach((item, index) => {
+                        if (item.komisi <= 0) return; 
+                        let pct = maxTagKomisi > 0 ? (item.komisi / maxTagKomisi) * 100 : 0;
+                        tagContainer.innerHTML += `
+                        <div class="compact-list-item">
+                            <div class="d-flex justify-content-between align-items-center mb-0">
+                                <span class="compact-list-title">${index + 1}. ${item.displayTag}</span>
+                                <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
+                            </div>
+                            <div class="compact-list-sub">${item.produkTerjual.toLocaleString('id-ID')} Pesanan</div>
+                            <div class="compact-progress"><div class="progress-bar bg-warning h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
+                        </div>`;
+                    });
+                }
             }
         }
 
@@ -1030,9 +1060,8 @@
             parentRow.parentNode.insertBefore(detailRow, parentRow.nextSibling);
         }
 
-        // Modifikasi Render Saved Reports untuk sekalian me-render widget akumulasinya
         function renderSavedReportsTable() {
-            // Update widget List Sumber Platform & TagLink setiap kali tabel dirender
+            // Update widget List Sumber Platform & TagLink (Akumulasi Local Storage)
             renderSavedSummaries();
 
             const tbody = document.getElementById('tableSavedReportsBody');
@@ -1107,7 +1136,6 @@
             new bootstrap.Modal(document.getElementById('klikShopeeModal')).show();
         }
 
-        // Menu TagLink Analyze (Kumulatif)
         function renderTagLinkTable(filterQuery = '') {
             const tbody = document.getElementById('tableTagLinkBody');
             tbody.innerHTML = '';
