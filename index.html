@@ -283,18 +283,17 @@
                                 </div>
                             </div>
 
-                            <!-- 2. Top TagLink -->
+                            <!-- 2. Top TagLink -> DIGANTI DATA KLIK SHOPEE -->
                             <div class="col-md-4">
                                 <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fa-solid fa-medal text-warning fs-6 me-2"></i>
-                                            <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Top TagLink <br><small class="text-muted fw-normal" style="font-size: 9px;">(Akumulasi Tersimpan)</small></h6>
-                                        </div>
-                                        <span class="badge bg-light text-dark border" style="font-size: 9px;">Max 10</span>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fa-solid fa-globe text-success fs-6 me-2"></i>
+                                        <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Data Klik Shopee <br><small class="text-muted fw-normal" style="font-size: 9px;">(Traffic Source Perujuk)</small></h6>
                                     </div>
-                                    <div style="height: 31px;" class="mb-2"></div>
-                                    <div id="savedTopTaglinkContainer" style="max-height: 230px; overflow-y: auto; padding-right: 5px;"></div>
+                                    <select id="savedTrafficSourceTagFilter" class="form-select form-select-sm mb-2 text-secondary w-auto" style="border-radius: 6px; box-shadow: none; border: 1px solid #dee2e6; font-size:11px;" onchange="renderSavedSummaries(true, false)">
+                                        <option value="all">Semua TagLink</option>
+                                    </select>
+                                    <div id="savedTrafficSourceContainer" style="max-height: 230px; overflow-y: auto; padding-right: 5px;"></div>
                                 </div>
                             </div>
 
@@ -352,7 +351,7 @@
                         </div>
                     </div>
 
-                    <!-- SUB-TAB 2: PERFORMA TAGLINK (DENGAN FILTER TANGGAL SENDIRI & SUMBER PLATFORM) -->
+                    <!-- SUB-TAB 2: PERFORMA TAGLINK (DENGAN TOP TAGLINK, FILTER TANGGAL, & SUMBER PLATFORM) -->
                     <div id="saved-subtab-taglink" class="saved-sub-section d-none">
                         <div class="card p-3 shadow-sm border-0 mb-3 bg-white" style="border-radius: 8px;">
                             <div class="row align-items-end g-2">
@@ -373,6 +372,18 @@
                                     </button>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Top TagLink Pindahan di Sini -->
+                        <div class="card p-4 shadow-sm border-0 mb-4 bg-white" style="border-radius: 12px;">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="fa-solid fa-medal text-warning fs-5 me-3"></i>
+                                    <h6 class="fw-bold text-dark mb-0">Top TagLink <span class="text-muted fw-normal" style="font-size: 11px;">(Berdasarkan Filter Tanggal)</span></h6>
+                                </div>
+                                <span class="badge bg-light text-dark border" style="font-size: 10px;">Max 10</span>
+                            </div>
+                            <div id="savedTopTaglinkContainer" style="max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
                         </div>
 
                         <div class="card p-4 shadow-sm border-0 mb-4 bg-white" style="border-radius: 12px;">
@@ -837,9 +848,15 @@
                 let tags = globalData.processedByDate[day].byTagLink;
                 for (let t in tags) {
                     let d = tags[t];
-                    if (!agg[t]) agg[t] = { displayTag: d.displayTag, klikMeta: 0, klikShopee: 0, produkTerjual: 0, spend: 0, komisi: 0, profit: 0, roas: 0, productDetails: [] };
+                    if (!agg[t]) agg[t] = { displayTag: d.displayTag, klikMeta: 0, klikShopee: 0, produkTerjual: 0, spend: 0, komisi: 0, profit: 0, roas: 0, productDetails: [], trafficSourceCounts: {} };
                     agg[t].klikMeta += d.klikMeta; agg[t].klikShopee += d.klikShopee; agg[t].produkTerjual += d.produkTerjual; agg[t].spend += d.spend; agg[t].komisi += d.komisi;
                     if(d.productDetails) agg[t].productDetails = agg[t].productDetails.concat(d.productDetails);
+                    if(d.trafficSourceCounts) {
+                        for(let src in d.trafficSourceCounts) {
+                            if(!agg[t].trafficSourceCounts[src]) agg[t].trafficSourceCounts[src] = 0;
+                            agg[t].trafficSourceCounts[src] += d.trafficSourceCounts[src];
+                        }
+                    }
                 }
             }
             return Object.values(agg);
@@ -893,6 +910,7 @@
 
         function renderTopTagLink() {
             const container = document.getElementById('topTaglinkContainer');
+            if(!container) return;
             container.innerHTML = '';
             let top10 = getAggregatedTagLinkData().sort((a, b) => b.komisi - a.komisi).slice(0, 10);
 
@@ -1015,6 +1033,9 @@
             if(document.getElementById('savedPlatformFilter')) {
                 document.getElementById('savedPlatformFilter').value = 'all';
             }
+            if(document.getElementById('savedTrafficSourceTagFilter')) {
+                document.getElementById('savedTrafficSourceTagFilter').value = 'all';
+            }
             if(document.getElementById('savedMetaAdSetFilter')) {
                 document.getElementById('savedMetaAdSetFilter').value = 'all';
             }
@@ -1056,11 +1077,15 @@
             let platformStats = {};
             let taglinkStats = {};
             let metaAdSetStats = {}; 
+            let trafficSourceStats = {};
 
             let kpiKM = 0, kpiKS = 0, kpiP = 0, kpiS = 0, kpiK = 0;
 
             const platformFilterEl = document.getElementById('savedPlatformFilter');
             const selectedPlatformTag = platformFilterEl ? platformFilterEl.value : 'all';
+
+            const trafficFilterEl = document.getElementById('savedTrafficSourceTagFilter');
+            const selectedTrafficTag = trafficFilterEl ? trafficFilterEl.value : 'all';
 
             const metaFilterEl = document.getElementById('savedMetaAdSetFilter');
             const selectedMetaAdSet = metaFilterEl ? metaFilterEl.value : 'all';
@@ -1093,6 +1118,7 @@
                         taglinkStats[tag].komisi += item.komisi || 0;
                         taglinkStats[tag].produkTerjual += item.produkTerjual || 0;
                         
+                        // Akumulasi untuk Sumber Platform
                         if(selectedPlatformTag === 'all' || selectedPlatformTag === tag) {
                             if(item.productDetails) {
                                 item.productDetails.forEach(p => {
@@ -1103,11 +1129,21 @@
                                 });
                             }
                         }
+
+                        // Akumulasi untuk Data Klik Shopee (Traffic Source)
+                        if(selectedTrafficTag === 'all' || selectedTrafficTag === tag) {
+                            if(item.trafficSourceCounts) {
+                                for(let src in item.trafficSourceCounts) {
+                                    if(!trafficSourceStats[src]) trafficSourceStats[src] = 0;
+                                    trafficSourceStats[src] += item.trafficSourceCounts[src];
+                                }
+                            }
+                        }
                     });
                 }
             });
 
-            // Akumulasikan semua taglink dan adset secara global untuk dropdown Performa Taglink
+            // Akumulasikan semua taglink dan adset secara global untuk dropdown Performa Taglink & Traffic Source
             let globalTaglinkStats = {};
             let globalMetaAdSetStats = {};
             currentReports.forEach(r => {
@@ -1146,6 +1182,16 @@
                 else platformFilterEl.value = 'all';
             }
 
+            if(!isDropdownChange && trafficFilterEl) {
+                let currentTrafficVal = trafficFilterEl.value;
+                trafficFilterEl.innerHTML = '<option value="all">Semua TagLink</option>';
+                Object.keys(globalTaglinkStats).sort().forEach(t => {
+                    let opt = document.createElement('option'); opt.value = t; opt.textContent = t; trafficFilterEl.appendChild(opt);
+                });
+                if(Array.from(trafficFilterEl.options).some(o => o.value === currentTrafficVal)) trafficFilterEl.value = currentTrafficVal;
+                else trafficFilterEl.value = 'all';
+            }
+
             if(!isDropdownChange && metaFilterEl) {
                 let currentMetaVal = metaFilterEl.value;
                 metaFilterEl.innerHTML = '<option value="all">Semua Set Iklan</option>';
@@ -1156,8 +1202,9 @@
                 else metaFilterEl.value = 'all';
             }
 
-            // Populate Dropdown Match di Tab Performa Taglink
+            // Populate Dropdown Match di Tab Performa Taglink & Render Top TagLink khusus tab Performa Taglink
             populateMatchDropdowns(globalTaglinkStats, globalMetaAdSetStats);
+            renderSavedTopTaglinkForTab(filteredReports);
 
             // 1. Render Sumber Platform
             let platContainer = document.getElementById('savedPlatformListContainer');
@@ -1183,30 +1230,26 @@
                 });
             }
 
-            // 2. Render Top TagLink (Maks 10)
-            if(!isDropdownChange) {
-                let tagContainer = document.getElementById('savedTopTaglinkContainer');
-                tagContainer.innerHTML = '';
-                let sortedTag = Object.values(taglinkStats).sort((a, b) => b.komisi - a.komisi).slice(0, 10);
-                
-                if(sortedTag.length === 0) {
-                    tagContainer.innerHTML = '<div class="text-muted text-center py-4 fst-italic" style="font-size:11px;">Belum ada data pada rentang ini.</div>';
-                } else {
-                    let maxTagKomisi = sortedTag[0].komisi;
-                    sortedTag.forEach((item, index) => {
-                        if (item.komisi <= 0) return; 
-                        let pct = maxTagKomisi > 0 ? (item.komisi / maxTagKomisi) * 100 : 0;
-                        tagContainer.innerHTML += `
-                        <div class="compact-list-item">
-                            <div class="d-flex justify-content-between align-items-center mb-0">
-                                <span class="compact-list-title">${index + 1}. ${item.displayTag}</span>
-                                <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
-                            </div>
-                            <div class="compact-list-sub">${item.produkTerjual.toLocaleString('id-ID')} Pesanan</div>
-                            <div class="compact-progress"><div class="progress-bar bg-warning h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
-                        </div>`;
-                    });
-                }
+            // 2. Render Data Klik Shopee (Traffic Source)
+            let trafficContainer = document.getElementById('savedTrafficSourceContainer');
+            trafficContainer.innerHTML = '';
+            let sortedTraffic = Object.keys(trafficSourceStats).map(key => { return { name: key, count: trafficSourceStats[key] }; }).sort((a, b) => b.count - a.count);
+
+            if(sortedTraffic.length === 0) {
+                trafficContainer.innerHTML = '<div class="text-muted text-center py-4 fst-italic" style="font-size:11px;">Belum ada data pada rentang ini.</div>';
+            } else {
+                let maxTrafficCount = sortedTraffic[0].count;
+                sortedTraffic.forEach((item, index) => {
+                    let pct = maxTrafficCount > 0 ? (item.count / maxTrafficCount) * 100 : 0;
+                    trafficContainer.innerHTML += `
+                    <div class="compact-list-item">
+                        <div class="d-flex justify-content-between align-items-center mb-0">
+                            <span class="compact-list-title text-wrap" style="max-width: 70%;">${index + 1}. ${item.name}</span>
+                            <span class="compact-list-value text-primary">${item.count.toLocaleString('id-ID')} Klik</span>
+                        </div>
+                        <div class="compact-progress"><div class="progress-bar bg-success h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
+                    </div>`;
+                });
             }
 
             // 3. Render Laporan Meta Ads
@@ -1234,6 +1277,48 @@
                     <div class="fw-bold fs-5 text-primary">${displayClicks.toLocaleString('id-ID')}</div>
                 </div>
             `;
+        }
+
+        function renderSavedTopTaglinkForTab(filteredReports) {
+            const tagContainer = document.getElementById('savedTopTaglinkContainer');
+            if(!tagContainer) return;
+            tagContainer.innerHTML = '';
+
+            let taglinkStats = {};
+            filteredReports.forEach(report => {
+                if(report.breakdown) {
+                    report.breakdown.forEach(item => {
+                        let tag = item.displayTag;
+                        if(!taglinkStats[tag]) {
+                            taglinkStats[tag] = { displayTag: tag, komisi: 0, produkTerjual: 0 };
+                        }
+                        taglinkStats[tag].komisi += item.komisi || 0;
+                        taglinkStats[tag].produkTerjual += item.produkTerjual || 0;
+                    });
+                }
+            });
+
+            let sortedTag = Object.values(taglinkStats).sort((a, b) => b.komisi - a.komisi).slice(0, 10);
+            
+            if(sortedTag.length === 0 || sortedTag[0].komisi === 0) {
+                tagContainer.innerHTML = '<div class="text-muted text-center py-4 fst-italic" style="font-size:11px;">Belum ada data pada rentang ini.</div>';
+                return;
+            }
+
+            let maxTagKomisi = sortedTag[0].komisi;
+            sortedTag.forEach((item, index) => {
+                if (item.komisi <= 0) return; 
+                let pct = maxTagKomisi > 0 ? (item.komisi / maxTagKomisi) * 100 : 0;
+                tagContainer.innerHTML += `
+                <div class="compact-list-item">
+                    <div class="d-flex justify-content-between align-items-center mb-0">
+                        <span class="compact-list-title">${index + 1}. ${item.displayTag}</span>
+                        <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
+                    </div>
+                    <div class="compact-list-sub">${item.produkTerjual.toLocaleString('id-ID')} Pesanan</div>
+                    <div class="compact-progress"><div class="progress-bar bg-warning h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
+                </div>`;
+            });
         }
 
         function populateMatchDropdowns(globalTaglinkStats, globalMetaAdSetStats) {
@@ -1281,13 +1366,18 @@
             }
 
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            let filteredReportsForTab = currentReports.filter(r => {
+                let rTs = getTimestampFromIndoDate(r.tanggal);
+                return rTs >= startTs && rTs <= endTs;
+            });
+
+            // Perbarui Top TagLink sesuai filter tanggal di tab Performa Taglink
+            renderSavedTopTaglinkForTab(filteredReportsForTab);
+
             let mSpend = 0, mClicks = 0, mShopeeClicks = 0, mOrders = 0, mKomisi = 0;
             let matchPlatformStats = {};
 
-            currentReports.forEach(r => {
-                let rTs = getTimestampFromIndoDate(r.tanggal);
-                if(rTs < startTs || rTs > endTs) return;
-
+            filteredReportsForTab.forEach(r => {
                 let rMeta = r.metaAdsDetails || {};
                 if(selAdSet) {
                     if(rMeta[selAdSet]) {
