@@ -352,17 +352,17 @@
                         </div>
                     </div>
 
-                    <!-- SUB-TAB 2: PERFORMA TAGLINK (DENGAN FILTER TANGGAL SENDIRI) -->
+                    <!-- SUB-TAB 2: PERFORMA TAGLINK (DENGAN FILTER TANGGAL SENDIRI & SUMBER PLATFORM) -->
                     <div id="saved-subtab-taglink" class="saved-sub-section d-none">
                         <div class="card p-3 shadow-sm border-0 mb-3 bg-white" style="border-radius: 8px;">
                             <div class="row align-items-end g-2">
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;"><i class="fa-regular fa-calendar me-1"></i> Mulai Tanggal</label>
-                                    <input type="date" id="matchFilterStartDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;">
+                                    <input type="date" id="matchFilterStartDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;" onchange="calculateMatchedPerformance()">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;"><i class="fa-regular fa-calendar-check me-1"></i> Sampai Tanggal</label>
-                                    <input type="date" id="matchFilterEndDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;">
+                                    <input type="date" id="matchFilterEndDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;" onchange="calculateMatchedPerformance()">
                                 </div>
                                 <div class="col-md-4">
                                     <button class="btn btn-sm btn-primary fw-bold px-3 me-1" onclick="calculateMatchedPerformance()">
@@ -392,7 +392,7 @@
                             </div>
                             
                             <!-- KPI 7 Kolom Hasil Pencocokan -->
-                            <div class="row row-cols-7 g-2" id="match-kpi-container">
+                            <div class="row row-cols-7 g-2 mb-4" id="match-kpi-container">
                                 <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Spend Meta</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
                                 <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Klik Meta</div><div class="fw-bold fs-6 text-muted">0</div></div></div>
                                 <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Klik Shopee</div><div class="fw-bold fs-6 text-muted">0</div></div></div>
@@ -400,6 +400,15 @@
                                 <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Total Komisi</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
                                 <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Profit</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
                                 <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">ROAS</div><div class="fw-bold fs-6 text-muted">0.00x</div></div></div>
+                            </div>
+
+                            <!-- List Sumber Platform di Bawah KPI -->
+                            <div class="card p-3 shadow-sm border-0 bg-light" style="border-radius: 10px;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fa-solid fa-share-nodes text-primary fs-6 me-2"></i>
+                                    <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Sumber Platform <br><small class="text-muted fw-normal" style="font-size: 9px;">(Berdasarkan Pilihan di Atas)</small></h6>
+                                </div>
+                                <div id="matchPlatformListContainer" style="max-height: 220px; overflow-y: auto; padding-right: 5px;"></div>
                             </div>
                         </div>
                     </div>
@@ -1015,6 +1024,10 @@
         function resetMatchFilter() {
             document.getElementById('matchFilterStartDate').value = '';
             document.getElementById('matchFilterEndDate').value = '';
+            const tSel = document.getElementById('matchTagLinkSelect');
+            const aSel = document.getElementById('matchAdSetSelect');
+            if(tSel && tSel.options.length > 0) tSel.selectedIndex = 0;
+            if(aSel && aSel.options.length > 0) aSel.selectedIndex = 0;
             calculateMatchedPerformance();
         }
 
@@ -1231,22 +1244,22 @@
             let currentTag = tagSelect.value;
             let currentAdSet = adSetSelect.value;
 
-            tagSelect.innerHTML = '';
-            adSetSelect.innerHTML = '';
+            tagSelect.innerHTML = '<option value="">-- Semua TagLink (Default Total) --</option>';
+            adSetSelect.innerHTML = '<option value="">-- Semua Set Iklan (Default Total) --</option>';
 
             let sortedTags = Object.keys(globalTaglinkStats).sort();
             sortedTags.forEach(t => {
                 let opt = document.createElement('option'); opt.value = t; opt.textContent = t;
                 tagSelect.appendChild(opt);
             });
-            if(sortedTags.includes(currentTag)) tagSelect.value = currentTag;
+            if(currentTag) tagSelect.value = currentTag;
 
             let sortedAdSets = Object.keys(globalMetaAdSetStats).sort();
             sortedAdSets.forEach(a => {
                 let opt = document.createElement('option'); opt.value = a; opt.textContent = globalMetaAdSetStats[a].displayName;
                 adSetSelect.appendChild(opt);
             });
-            if(sortedAdSets.includes(currentAdSet)) adSetSelect.value = currentAdSet;
+            if(currentAdSet) adSetSelect.value = currentAdSet;
         }
 
         function calculateMatchedPerformance() {
@@ -1268,36 +1281,43 @@
             }
 
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
-            let mSpend = 0, mClicks = 0, mOrders = 0, mKomisi = 0;
+            let mSpend = 0, mClicks = 0, mShopeeClicks = 0, mOrders = 0, mKomisi = 0;
+            let matchPlatformStats = {};
 
             currentReports.forEach(r => {
                 let rTs = getTimestampFromIndoDate(r.tanggal);
                 if(rTs < startTs || rTs > endTs) return;
 
                 let rMeta = r.metaAdsDetails || {};
-                let rSpend = 0, rClicks = 0;
-                if(selAdSet && rMeta[selAdSet]) {
-                    rSpend = rMeta[selAdSet].spend || 0;
-                    rClicks = rMeta[selAdSet].clicks || 0;
+                if(selAdSet) {
+                    if(rMeta[selAdSet]) {
+                        mSpend += rMeta[selAdSet].spend || 0;
+                        mClicks += rMeta[selAdSet].clicks || 0;
+                    }
+                } else {
+                    for(let k in rMeta) {
+                        mSpend += rMeta[k].spend || 0;
+                        mClicks += rMeta[k].clicks || 0;
+                    }
                 }
 
-                let tagMatched = false;
-                let tOrders = 0, tKomisi = 0;
                 if(r.breakdown) {
                     r.breakdown.forEach(b => {
                         if(!selTag || b.displayTag === selTag) {
-                            tagMatched = true;
-                            tOrders += b.produkTerjual || 0;
-                            tKomisi += b.komisi || 0;
+                            mShopeeClicks += b.klikShopee || 0;
+                            mOrders += b.produkTerjual || 0;
+                            mKomisi += b.komisi || 0;
+
+                            if(b.productDetails) {
+                                b.productDetails.forEach(p => {
+                                    let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform.toLowerCase() : 'lainnya';
+                                    if(!matchPlatformStats[plat]) matchPlatformStats[plat] = { komisi: 0, pesanan: 0 };
+                                    matchPlatformStats[plat].komisi += p.komisi || 0;
+                                    matchPlatformStats[plat].pesanan += 1;
+                                });
+                            }
                         }
                     });
-                }
-
-                if(tagMatched || rSpend > 0) {
-                    mSpend += rSpend;
-                    mClicks += rClicks;
-                    mOrders += tOrders;
-                    mKomisi += tKomisi;
                 }
             });
 
@@ -1307,12 +1327,36 @@
             document.getElementById('match-kpi-container').innerHTML = `
                 ${createKPICard('Spend Meta', formatIDR(mSpend))}
                 ${createKPICard('Klik Meta', mClicks.toLocaleString('id-ID'))}
-                ${createKPICard('Klik Shopee', '0')}
+                ${createKPICard('Klik Shopee', mShopeeClicks.toLocaleString('id-ID'))}
                 ${createKPICard('Total Pesanan', mOrders.toLocaleString('id-ID'))}
                 ${createKPICard('Total Komisi', formatIDR(mKomisi), 'text-primary')}
                 ${createKPICard('Profit', formatIDR(mProfit), mProfit >= 0 ? 'text-success' : 'text-danger')}
                 ${createKPICard('ROAS', formatROAS(mRoas, mProfit))}
             `;
+
+            // Render List Sumber Platform di Tab Performa Taglink
+            let matchPlatContainer = document.getElementById('matchPlatformListContainer');
+            matchPlatContainer.innerHTML = '';
+            let sortedMatchPlat = Object.keys(matchPlatformStats).map(key => { return { name: key, ...matchPlatformStats[key] }; }).sort((a, b) => b.komisi - a.komisi);
+            
+            if(sortedMatchPlat.length === 0) { 
+                matchPlatContainer.innerHTML = '<div class="text-muted text-center py-3 fst-italic" style="font-size:11px;">Tidak ada data platform.</div>'; 
+            } else {
+                let maxMatchPlatKomisi = sortedMatchPlat[0].komisi;
+                sortedMatchPlat.forEach((item, index) => {
+                    if (item.komisi <= 0) return; 
+                    let pct = maxMatchPlatKomisi > 0 ? (item.komisi / maxMatchPlatKomisi) * 100 : 0;
+                    matchPlatContainer.innerHTML += `
+                    <div class="compact-list-item">
+                        <div class="d-flex justify-content-between align-items-center mb-0">
+                            <span class="compact-list-title text-capitalize">${index + 1}. ${item.name}</span>
+                            <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
+                        </div>
+                        <div class="compact-list-sub">${item.pesanan.toLocaleString('id-ID')} Pesanan</div>
+                        <div class="compact-progress"><div class="progress-bar bg-primary h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
+                    </div>`;
+                });
+            }
         }
 
         function saveReportToStorage() {
