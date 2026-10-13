@@ -1472,4 +1472,45 @@
             const link = document.createElement("a");
             const url = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
             link.setAttribute("href", url); link.setAttribute("download", filename);
-            document.body
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+        function exportDashboardCSV() {
+            let sortedDates = Object.keys(globalData.processedByDate);
+            if(sortedDates.length===0){showToast("Belum ada data.");return;}
+            let csv = "Tanggal,Total Spend Meta,Total Klik Meta,Total Klik Shopee,Total Pesanan,Total Komisi Shopee,Total Profit,ROAS\n";
+            sortedDates.forEach(day => { let t = globalData.processedByDate[day].totals; csv += `${day},${Math.round(t.spend)},${t.klikMeta},${t.klikShopee},${t.produkTerjual},${Math.round(t.komisi)},${Math.round(t.profit)},${t.roas.toFixed(2)}\n`; });
+            downloadCSV(csv, `Rekap_Dashboard_Affiliate_MultiHarian.csv`);
+        }
+        function exportSavedReportsJSON() {
+            const savedData = localStorage.getItem('affiliate_saved_reports');
+            if (!savedData || savedData === "[]") { showToast("Belum ada data.", true); return; }
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(new Blob([JSON.stringify(JSON.parse(savedData), null, 4)], { type: 'application/json' }));
+            link.setAttribute("href", url); link.setAttribute("download", `Backup_SavedReports.json`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+        }
+        function importSavedReportsJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedData)) throw new Error("Format tidak valid.");
+                    let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+                    let c = 0;
+                    importedData.forEach(newR => {
+                        const idx = currentReports.findIndex(r => r.tanggal === newR.tanggal);
+                        if (idx === -1) currentReports.push(newR); else currentReports[idx] = newR;
+                        c++;
+                    });
+                    localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
+                    renderSavedReportsTable(); showToast(`Berhasil import ${c} laporan.`, false);
+                } catch (err) { showToast("Gagal: " + err.message, true); }
+                event.target.value = "";
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
