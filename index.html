@@ -174,7 +174,7 @@
 
                 <!-- MENU 2: DASHBOARD -->
                 <section id="menu-dashboard" class="menu-section d-none">
-                    <div class="row row-cols-2 row-cols-md-4 row-cols-xl-7 g-2 mb-4" id="kpi-container"></div>
+                    <div class="row row-cols-7 g-2 mb-4" id="kpi-container"></div>
 
                     <div class="d-flex justify-content-end gap-2 mb-3">
                         <button class="btn btn-sm btn-primary px-3 fw-bold" onclick="saveReportToStorage()"><i class="fa-solid fa-floppy-disk me-1"></i> Simpan Laporan</button>
@@ -255,8 +255,8 @@
                         </div>
                     </div>
 
-                    <!-- Kotak KPI Saved Reports -->
-                    <div class="row row-cols-2 row-cols-md-4 row-cols-xl-7 g-2 mb-4" id="saved-kpi-container"></div>
+                    <!-- Kotak KPI Saved Reports (1 Line & Bold Label) -->
+                    <div class="row row-cols-7 g-2 mb-4" id="saved-kpi-container"></div>
 
                     <!-- 3 Kotak Ringkasan Berjejer di Satu Baris -->
                     <div class="row mb-4 g-3">
@@ -284,7 +284,7 @@
                                     </div>
                                     <span class="badge bg-light text-dark border" style="font-size: 9px;">Max 10</span>
                                 </div>
-                                <div style="height: 31px;" class="mb-2"></div> <!-- Spacer penyeimbang tinggi dengan dropdown sebelah -->
+                                <div style="height: 31px;" class="mb-2"></div>
                                 <div id="savedTopTaglinkContainer" style="max-height: 230px; overflow-y: auto; padding-right: 5px;"></div>
                             </div>
                         </div>
@@ -299,10 +299,38 @@
                                 <select id="savedMetaAdSetFilter" class="form-select form-select-sm mb-2 text-secondary w-auto" style="border-radius: 6px; box-shadow: none; border: 1px solid #dee2e6; font-size:11px;" onchange="renderSavedSummaries(true, false)">
                                     <option value="all">Semua Set Iklan</option>
                                 </select>
-                                <div id="savedMetaAdsContainer" class="d-flex flex-column justify-content-center" style="min-height: 190px;">
-                                    <!-- Rendered dynamically -->
-                                </div>
+                                <div id="savedMetaAdsContainer" class="d-flex flex-column justify-content-center" style="min-height: 190px;"></div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- TABEL KORELASI / ANALISIS KECOCOKAN (TAGLINK & SET IKLAN) -->
+                    <div class="card p-4 shadow-sm border-0 mb-4" style="border-radius: 12px;">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fa-solid fa-network-wired text-success fs-5 me-3"></i>
+                                <h6 class="fw-bold text-dark mb-0">Analisis Pencocokan TagLink & Set Iklan</h6>
+                            </div>
+                            <span class="badge bg-light text-dark border" style="font-size: 10px;">Cross-Analysis</span>
+                        </div>
+                        <div class="table-responsive" style="max-height: 280px;">
+                            <table class="table table-sm table-hover align-middle mb-0" style="font-size: 11px;">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>TagLink (Shopee)</th>
+                                        <th>Set Iklan (Meta Ads)</th>
+                                        <th>Spend Meta</th>
+                                        <th>Klik Meta</th>
+                                        <th>Pesanan</th>
+                                        <th>Komisi</th>
+                                        <th>Profit</th>
+                                        <th>ROAS</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="savedCrossAnalysisBody">
+                                    <tr><td colspan="8" class="text-center text-muted fst-italic">Belum ada data korelasi.</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -410,7 +438,7 @@
         </div>
     </div>
 
-    <!-- MODAL: Distribusi Pesanan (Tabel Desain Rowspan Tanpa Subtotal) -->
+    <!-- MODAL: Distribusi Pesanan -->
     <div class="modal fade" id="distribusiModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg"> 
             <div class="modal-content">
@@ -627,8 +655,7 @@
                 });
             }
 
-            // Meta Ads (Merekam juga Nama Set Iklan)
-            let dailyMetaAds = {}; // day -> { adSetKey: { name, spend, clicks } }
+            let dailyMetaAds = {}; 
             if (globalData.meta.length > 0) {
                 globalData.meta.forEach(row => {
                     let day = formatStandardDate(row['Awal pelaporan'] || row['Reporting Starts']);
@@ -640,7 +667,6 @@
                     let clicks = parseInt(row['Hasil'] || row['Results'] || 0) || 0; 
                     let spend = cleanNumber(row['Jumlah yang dibelanjakan (IDR)'] || row['Amount spent (IDR)']);
 
-                    // Rekap harian untuk Meta Ads Details
                     if(!dailyMetaAds[day]) dailyMetaAds[day] = {};
                     if(!dailyMetaAds[day][adSetKey]) {
                         dailyMetaAds[day][adSetKey] = { displayName: adSetName, spend: 0, clicks: 0 };
@@ -733,8 +759,9 @@
 
         function formatIDR(num) { return 'Rp' + Math.round(num).toLocaleString('id-ID'); }
 
+        // KPI Card dengan Label yang DIBOLD sesuai permintaan
         function createKPICard(title, value, colorClass = '') {
-            return `<div class="col"><div class="card p-2 bg-white shadow-sm h-100 kpi-card"><div class="text-muted" style="font-size:10px;">${title}</div><div class="fw-bold fs-6 ${colorClass}">${value}</div></div></div>`;
+            return `<div class="col"><div class="card p-2 bg-white shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">${title}</div><div class="fw-bold fs-6 ${colorClass}">${value}</div></div></div>`;
         }
 
         function renderDashboard() {
@@ -951,7 +978,7 @@
         }
 
         // ==========================================
-        // FITUR SAVED REPORTS DENGAN KOTAK META ADS
+        // FITUR SAVED REPORTS TERBARU
         // ==========================================
         function resetSavedFilter() {
             document.getElementById('filterStartDate').value = '';
@@ -989,7 +1016,8 @@
 
             let platformStats = {};
             let taglinkStats = {};
-            let metaAdSetStats = {}; // adSetKey -> { displayName, spend, clicks }
+            let metaAdSetStats = {}; 
+            let crossAnalysisMap = {}; // "tag|adset" -> { tag, adSet, spend, clicks, orders, komisi }
 
             let kpiKM = 0, kpiKS = 0, kpiP = 0, kpiS = 0, kpiK = 0;
 
@@ -1006,7 +1034,12 @@
                 kpiS += report.spend || 0;
                 kpiK += report.komisi || 0;
 
-                // Akumulasi Meta Ads Details jika tersedia di data tersimpan
+                let reportMetaAds = report.metaAdsDetails || {};
+                let firstAdSetKey = Object.keys(reportMetaAds)[0] || 'Utama / General';
+                let firstAdSetName = reportMetaAds[firstAdSetKey] ? reportMetaAds[firstAdSetKey].displayName : 'Utama / General';
+                let reportSpend = report.spend || 0;
+                let reportClicks = report.klikMeta || 0;
+
                 if(report.metaAdsDetails) {
                     for(let adSetKey in report.metaAdsDetails) {
                         let adData = report.metaAdsDetails[adSetKey];
@@ -1028,6 +1061,14 @@
                         taglinkStats[tag].komisi += item.komisi || 0;
                         taglinkStats[tag].produkTerjual += item.produkTerjual || 0;
                         
+                        // Cross Analysis Mapping
+                        let mapKey = `${tag}___${firstAdSetName}`;
+                        if(!crossAnalysisMap[mapKey]) {
+                            crossAnalysisMap[mapKey] = { tag: tag, adSet: firstAdSetName, spend: reportSpend, clicks: reportClicks, orders: 0, komisi: 0 };
+                        }
+                        crossAnalysisMap[mapKey].orders += item.produkTerjual || 0;
+                        crossAnalysisMap[mapKey].komisi += item.komisi || 0;
+
                         if(selectedPlatformTag === 'all' || selectedPlatformTag === tag) {
                             if(item.productDetails) {
                                 item.productDetails.forEach(p => {
@@ -1055,7 +1096,6 @@
                 ${createKPICard('ROAS', kpiRoas.toFixed(2) + 'x')}
             `;
 
-            // Update Dropdown Platform
             if(!isDropdownChange && platformFilterEl) {
                 let currentVal = platformFilterEl.value;
                 platformFilterEl.innerHTML = '<option value="all">Semua TagLink</option>';
@@ -1066,7 +1106,6 @@
                 else platformFilterEl.value = 'all';
             }
 
-            // Update Dropdown Meta Ad Set
             if(!isDropdownChange && metaFilterEl) {
                 let currentMetaVal = metaFilterEl.value;
                 metaFilterEl.innerHTML = '<option value="all">Semua Set Iklan</option>';
@@ -1127,7 +1166,7 @@
                 }
             }
 
-            // 3. Render Laporan Meta Ads (Spend & Klik sesuai Filter Set Iklan)
+            // 3. Render Laporan Meta Ads
             let metaContainer = document.getElementById('savedMetaAdsContainer');
             let displaySpend = 0;
             let displayClicks = 0;
@@ -1152,6 +1191,32 @@
                     <div class="fw-bold fs-5 text-primary">${displayClicks.toLocaleString('id-ID')}</div>
                 </div>
             `;
+
+            // 4. Render Tabel Cross Analysis (TagLink & Set Iklan)
+            let crossBody = document.getElementById('savedCrossAnalysisBody');
+            crossBody.innerHTML = '';
+            let crossList = Object.values(crossAnalysisMap).sort((a, b) => b.komisi - a.komisi);
+
+            if(crossList.length === 0) {
+                crossBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted fst-italic">Belum ada data korelasi.</td></tr>`;
+            } else {
+                crossList.forEach(row => {
+                    let profit = row.komisi - row.spend;
+                    let roas = row.spend > 0 ? (row.komisi / row.spend) : 0;
+                    crossBody.innerHTML += `
+                        <tr>
+                            <td class="fw-bold text-dark">${row.tag}</td>
+                            <td><span class="badge bg-secondary fw-normal">${row.adSet}</span></td>
+                            <td>${formatIDR(row.spend)}</td>
+                            <td>${row.clicks.toLocaleString('id-ID')}</td>
+                            <td>${row.orders.toLocaleString('id-ID')}</td>
+                            <td class="text-primary fw-bold">${formatIDR(row.komisi)}</td>
+                            <td class="${profit >= 0 ? 'text-success' : 'text-danger'} fw-bold">${formatIDR(profit)}</td>
+                            <td>${roas.toFixed(2)}x</td>
+                        </tr>
+                    `;
+                });
+            }
         }
 
         function saveReportToStorage() {
@@ -1194,6 +1259,7 @@
             if (confirm("Hapus SEMUA laporan?")) { localStorage.removeItem('affiliate_saved_reports'); renderSavedReportsTable(); }
         }
 
+        // Tabel Breakdown TagLink di Saved Reports (Kini sudah ditambahkan kolom ROAS)
         function toggleSavedReportDetailInline(dateStr, btnElement) {
             const safeId = "saved-detail-" + dateStr.replace(/\s+/g, '-');
             const existingRow = document.getElementById(safeId);
@@ -1213,11 +1279,22 @@
             let tableRowsHtml = "";
             [...foundReport.breakdown].sort((a, b) => b.komisi - a.komisi).forEach(item => {
                 let profit = item.profit !== undefined ? item.profit : (item.komisi - item.spend);
+                let roas = item.spend > 0 ? (item.komisi / item.spend) : (item.roas || 0);
                 let orderLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved('${dateStr}', '${item.displayTag}')">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
                 let clickLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved('${dateStr}', '${item.displayTag}')">${(item.klikShopee || 0).toLocaleString('id-ID')}</a>`;
-                tableRowsHtml += `<tr><td class="fw-bold">${item.displayTag}</td><td>${(item.klikMeta||0).toLocaleString('id-ID')}</td><td>${clickLink}</td><td>${orderLink}</td><td>${formatIDR(item.spend||0)}</td><td class="text-primary fw-bold">${formatIDR(item.komisi||0)}</td><td class="fw-bold ${profit>=0?'text-success':'text-danger'}">${formatIDR(profit)}</td></tr>`;
+                
+                tableRowsHtml += `<tr>
+                    <td class="fw-bold">${item.displayTag}</td>
+                    <td>${(item.klikMeta||0).toLocaleString('id-ID')}</td>
+                    <td>${clickLink}</td>
+                    <td>${orderLink}</td>
+                    <td>${formatIDR(item.spend||0)}</td>
+                    <td class="text-primary fw-bold">${formatIDR(item.komisi||0)}</td>
+                    <td class="fw-bold ${profit>=0?'text-success':'text-danger'}">${formatIDR(profit)}</td>
+                    <td class="fw-bold">${roas.toFixed(2)}x</td>
+                </tr>`;
             });
-            detailRow.innerHTML = `<td colspan="9" class="p-3"><div class="detail-table-container shadow-sm"><div class="fw-bold text-dark mb-2"><i class="fa-solid fa-tags me-1"></i> Rincian TagLink — ${dateStr}</div><table class="table table-sm table-bordered mb-0 bg-white" style="font-size: 11px;"><thead class="table-light"><tr><th>Tag Link</th><th>Klik Meta</th><th>Klik Shopee</th><th>Pesanan Unik</th><th>Spend</th><th>Komisi</th><th>Profit</th></tr></thead><tbody>${tableRowsHtml}</tbody></table></div></td>`;
+            detailRow.innerHTML = `<td colspan="9" class="p-3"><div class="detail-table-container shadow-sm"><div class="fw-bold text-dark mb-2"><i class="fa-solid fa-tags me-1"></i> Rincian TagLink — ${dateStr}</div><table class="table table-sm table-bordered mb-0 bg-white" style="font-size: 11px;"><thead class="table-light"><tr><th>Tag Link</th><th>Klik Meta</th><th>Klik Shopee</th><th>Pesanan Unik</th><th>Spend</th><th>Komisi</th><th>Profit</th><th>ROAS</th></tr></thead><tbody>${tableRowsHtml}</tbody></table></div></td>`;
             parentRow.parentNode.insertBefore(detailRow, parentRow.nextSibling);
         }
 
