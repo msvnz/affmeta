@@ -124,9 +124,6 @@
                 <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('savedreports')">
                     <i class="fa-solid fa-database me-2"></i>Saved Reports
                 </button>
-                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('taglink')">
-                    <i class="fa-solid fa-tags me-2"></i>TagLink Analyze
-                </button>
             </div>
         </div>
 
@@ -233,179 +230,177 @@
                 <!-- MENU 3: SAVED REPORTS -->
                 <section id="menu-savedreports" class="menu-section d-none">
                     
-                    <!-- Fitur Filter Kalender -->
-                    <div class="card p-3 shadow-sm border-0 mb-3 bg-white" style="border-radius: 8px;">
-                        <div class="row align-items-end g-2">
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;"><i class="fa-regular fa-calendar me-1"></i> Mulai Tanggal</label>
-                                <input type="date" id="filterStartDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;"><i class="fa-regular fa-calendar-check me-1"></i> Sampai Tanggal</label>
-                                <input type="date" id="filterEndDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;">
-                            </div>
-                            <div class="col-md-4">
-                                <button class="btn btn-sm btn-primary fw-bold px-3 me-1" onclick="renderSavedSummaries(false, true)">
-                                    <i class="fa-solid fa-filter me-1"></i> Terapkan Filter
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary fw-bold px-3" onclick="resetSavedFilter()">
-                                    <i class="fa-solid fa-rotate-left me-1"></i> Reset
-                                </button>
-                            </div>
-                        </div>
+                    <!-- Tombol Navigasi Internal Saved Reports -->
+                    <div class="d-flex gap-2 mb-3">
+                        <button id="navBtnSavedDashboard" class="btn btn-sm btn-primary fw-bold px-4" onclick="switchSavedSubTab('dashboard')">
+                            <i class="fa-solid fa-chart-pie me-1"></i> Dashboard
+                        </button>
+                        <button id="navBtnSavedTaglink" class="btn btn-sm btn-outline-secondary fw-bold px-4" onclick="switchSavedSubTab('taglink')">
+                            <i class="fa-solid fa-tags me-1"></i> Performa Taglink
+                        </button>
                     </div>
 
-                    <!-- Kotak KPI Saved Reports (1 Line & Bold Label) -->
-                    <div class="row row-cols-7 g-2 mb-4" id="saved-kpi-container"></div>
-
-                    <!-- 3 Kotak Ringkasan Berjejer di Satu Baris -->
-                    <div class="row mb-4 g-3">
-                        <!-- 1. Sumber Platform -->
-                        <div class="col-md-4">
-                            <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fa-solid fa-share-nodes text-primary fs-6 me-2"></i>
-                                    <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Sumber Platform <br><small class="text-muted fw-normal" style="font-size: 9px;">(Akumulasi Tersimpan)</small></h6>
+                    <!-- SUB-TAB 1: DASHBOARD SAVED REPORTS -->
+                    <div id="saved-subtab-dashboard" class="saved-sub-section">
+                        <!-- Fitur Filter Kalender -->
+                        <div class="card p-3 shadow-sm border-0 mb-3 bg-white" style="border-radius: 8px;">
+                            <div class="row align-items-end g-2">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;"><i class="fa-regular fa-calendar me-1"></i> Mulai Tanggal</label>
+                                    <input type="date" id="filterStartDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;">
                                 </div>
-                                <select id="savedPlatformFilter" class="form-select form-select-sm mb-2 text-secondary w-auto" style="border-radius: 6px; box-shadow: none; border: 1px solid #dee2e6; font-size:11px;" onchange="renderSavedSummaries(true, false)">
-                                    <option value="all">Semua TagLink</option>
-                                </select>
-                                <div id="savedPlatformListContainer" style="max-height: 230px; overflow-y: auto; padding-right: 5px;"></div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;"><i class="fa-regular fa-calendar-check me-1"></i> Sampai Tanggal</label>
+                                    <input type="date" id="filterEndDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;">
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-sm btn-primary fw-bold px-3 me-1" onclick="renderSavedSummaries(false, true)">
+                                        <i class="fa-solid fa-filter me-1"></i> Terapkan Filter
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary fw-bold px-3" onclick="resetSavedFilter()">
+                                        <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 2. Top TagLink -->
-                        <div class="col-md-4">
-                            <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fa-solid fa-medal text-warning fs-6 me-2"></i>
-                                        <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Top TagLink <br><small class="text-muted fw-normal" style="font-size: 9px;">(Akumulasi Tersimpan)</small></h6>
+                        <!-- Kotak KPI Saved Reports (1 Line & Bold Label) -->
+                        <div class="row row-cols-7 g-2 mb-4" id="saved-kpi-container"></div>
+
+                        <!-- 3 Kotak Ringkasan Berjejer di Satu Baris -->
+                        <div class="row mb-4 g-3">
+                            <!-- 1. Sumber Platform -->
+                            <div class="col-md-4">
+                                <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fa-solid fa-share-nodes text-primary fs-6 me-2"></i>
+                                        <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Sumber Platform <br><small class="text-muted fw-normal" style="font-size: 9px;">(Akumulasi Tersimpan)</small></h6>
                                     </div>
-                                    <span class="badge bg-light text-dark border" style="font-size: 9px;">Max 10</span>
+                                    <select id="savedPlatformFilter" class="form-select form-select-sm mb-2 text-secondary w-auto" style="border-radius: 6px; box-shadow: none; border: 1px solid #dee2e6; font-size:11px;" onchange="renderSavedSummaries(true, false)">
+                                        <option value="all">Semua TagLink</option>
+                                    </select>
+                                    <div id="savedPlatformListContainer" style="max-height: 230px; overflow-y: auto; padding-right: 5px;"></div>
                                 </div>
-                                <div style="height: 31px;" class="mb-2"></div>
-                                <div id="savedTopTaglinkContainer" style="max-height: 230px; overflow-y: auto; padding-right: 5px;"></div>
+                            </div>
+
+                            <!-- 2. Top TagLink -->
+                            <div class="col-md-4">
+                                <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa-solid fa-medal text-warning fs-6 me-2"></i>
+                                            <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Top TagLink <br><small class="text-muted fw-normal" style="font-size: 9px;">(Akumulasi Tersimpan)</small></h6>
+                                        </div>
+                                        <span class="badge bg-light text-dark border" style="font-size: 9px;">Max 10</span>
+                                    </div>
+                                    <div style="height: 31px;" class="mb-2"></div>
+                                    <div id="savedTopTaglinkContainer" style="max-height: 230px; overflow-y: auto; padding-right: 5px;"></div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Laporan Meta Ads -->
+                            <div class="col-md-4">
+                                <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fa-brands fa-facebook text-primary fs-6 me-2"></i>
+                                        <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Laporan Meta Ads <br><small class="text-muted fw-normal" style="font-size: 9px;">(Spend & Klik)</small></h6>
+                                    </div>
+                                    <select id="savedMetaAdSetFilter" class="form-select form-select-sm mb-2 text-secondary w-auto" style="border-radius: 6px; box-shadow: none; border: 1px solid #dee2e6; font-size:11px;" onchange="renderSavedSummaries(true, false)">
+                                        <option value="all">Semua Set Iklan</option>
+                                    </select>
+                                    <div id="savedMetaAdsContainer" class="d-flex flex-column justify-content-center" style="min-height: 190px;"></div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 3. Laporan Meta Ads -->
-                        <div class="col-md-4">
-                            <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fa-brands fa-facebook text-primary fs-6 me-2"></i>
-                                    <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Laporan Meta Ads <br><small class="text-muted fw-normal" style="font-size: 9px;">(Spend & Klik)</small></h6>
-                                </div>
-                                <select id="savedMetaAdSetFilter" class="form-select form-select-sm mb-2 text-secondary w-auto" style="border-radius: 6px; box-shadow: none; border: 1px solid #dee2e6; font-size:11px;" onchange="renderSavedSummaries(true, false)">
-                                    <option value="all">Semua Set Iklan</option>
-                                </select>
-                                <div id="savedMetaAdsContainer" class="d-flex flex-column justify-content-center" style="min-height: 190px;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- FITUR PENCINTA KECOCOKAN (TAGLINK & SET IKLAN) DI BAWAH 3 KOTAK -->
-                    <div class="card p-4 shadow-sm border-0 mb-4 bg-white" style="border-radius: 12px;">
-                        <div class="d-flex align-items-center mb-3">
-                            <i class="fa-solid fa-filter-circle-dollar text-success fs-5 me-3"></i>
-                            <h6 class="fw-bold text-dark mb-0">Analisis Performa TagLink & Set Iklan Terpilih</h6>
-                        </div>
-                        <div class="row align-items-end g-2 mb-4">
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;">Pilih TagLink</label>
-                                <select id="matchTagLinkSelect" class="form-select form-select-sm text-secondary" style="border-color: #dee2e6;"></select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;">Pilih Set Iklan</label>
-                                <select id="matchAdSetSelect" class="form-select form-select-sm text-secondary" style="border-color: #dee2e6;"></select>
-                            </div>
-                            <div class="col-md-4">
-                                <button class="btn btn-sm btn-success fw-bold px-4" onclick="calculateMatchedPerformance()">
-                                    <i class="fa-solid fa-magnifying-glass-chart me-1"></i> Lihat Performa
+                        <div class="card p-2 shadow-sm border-0 mb-3 text-end bg-white">
+                            <div class="d-flex justify-content-end gap-2">
+                                <input type="file" id="importJsonFile" accept=".json" style="display: none;" onchange="importSavedReportsJSON(event)">
+                                <button class="btn btn-sm btn-info fw-bold text-white" onclick="document.getElementById('importJsonFile').click()">
+                                    <i class="fa-solid fa-file-import me-1"></i> Import JSON
+                                </button>
+                                <button class="btn btn-sm btn-warning fw-bold" onclick="exportSavedReportsJSON()">
+                                    <i class="fa-solid fa-file-code me-1"></i> Export JSON Data
+                                </button>
+                                <button class="btn btn-sm btn-danger fw-bold" onclick="clearAllSavedReports()">
+                                    <i class="fa-solid fa-trash-can me-1"></i> Bersihkan Semua
                                 </button>
                             </div>
                         </div>
                         
-                        <!-- KPI 7 Kolom Hasil Pencocokan (Ukuran persis sama dengan KPI utama) -->
-                        <div class="row row-cols-7 g-2" id="match-kpi-container">
-                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Spend Meta</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
-                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Klik Meta</div><div class="fw-bold fs-6 text-muted">0</div></div></div>
-                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Klik Shopee</div><div class="fw-bold fs-6 text-muted">0</div></div></div>
-                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Total Pesanan</div><div class="fw-bold fs-6 text-muted">0</div></div></div>
-                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Total Komisi</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
-                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Profit</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
-                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">ROAS</div><div class="fw-bold fs-6 text-muted">0.00x</div></div></div>
-                        </div>
-                    </div>
-
-                    <div class="card p-2 shadow-sm border-0 mb-3 text-end bg-white">
-                        <div class="d-flex justify-content-end gap-2">
-                            <input type="file" id="importJsonFile" accept=".json" style="display: none;" onchange="importSavedReportsJSON(event)">
-                            <button class="btn btn-sm btn-info fw-bold text-white" onclick="document.getElementById('importJsonFile').click()">
-                                <i class="fa-solid fa-file-import me-1"></i> Import JSON
-                            </button>
-                            <button class="btn btn-sm btn-warning fw-bold" onclick="exportSavedReportsJSON()">
-                                <i class="fa-solid fa-file-code me-1"></i> Export JSON Data
-                            </button>
-                            <button class="btn btn-sm btn-danger fw-bold" onclick="clearAllSavedReports()">
-                                <i class="fa-solid fa-trash-can me-1"></i> Bersihkan Semua
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="card shadow-sm border-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-dark sticky-top">
-                                    <tr>
-                                        <th>Tanggal Laporan</th>
-                                        <th>Klik Meta</th>
-                                        <th>Klik Shopee</th>
-                                        <th class="col-pesanan">Pesanan</th>
-                                        <th>Spend</th>
-                                        <th>Komisi</th>
-                                        <th>Profit</th>
-                                        <th>ROAS</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tableSavedReportsBody">
-                                    <tr><td colspan="9" class="text-center text-muted">Belum ada laporan yang disimpan.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- MENU 4: TAGLINK ANALYZE -->
-                <section id="menu-taglink" class="menu-section d-none">
-                    <div class="card p-3 shadow-sm border-0 mb-3">
-                        <div class="row align-items-center justify-content-between g-2">
-                            <div class="col-md-4">
-                                <input type="text" id="searchTagLink" class="form-control form-control-sm" placeholder="Cari Tag Link..." oninput="filterTagLink()">
-                            </div>
-                            <div class="col-md-auto">
-                                <button class="btn btn-sm btn-success fw-bold" onclick="exportTagLinkCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV TagLink</button>
+                        <div class="card shadow-sm border-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-dark sticky-top">
+                                        <tr>
+                                            <th>Tanggal Laporan</th>
+                                            <th>Klik Meta</th>
+                                            <th>Klik Shopee</th>
+                                            <th class="col-pesanan">Pesanan</th>
+                                            <th>Spend</th>
+                                            <th>Komisi</th>
+                                            <th>Profit</th>
+                                            <th>ROAS</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableSavedReportsBody">
+                                        <tr><td colspan="9" class="text-center text-muted">Belum ada laporan yang disimpan.</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
-                    <div class="card shadow-sm border-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-dark sticky-top">
-                                    <tr>
-                                        <th>Tag Link (Kumulatif)</th>
-                                        <th>Klik Meta</th>
-                                        <th>Klik Shopee</th>
-                                        <th class="col-pesanan">Pesanan</th>
-                                        <th>Spend</th>
-                                        <th>Komisi</th>
-                                        <th>Profit</th>
-                                        <th>ROAS</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tableTagLinkBody"></tbody>
-                            </table>
+
+                    <!-- SUB-TAB 2: PERFORMA TAGLINK (DENGAN FILTER TANGGAL SENDIRI) -->
+                    <div id="saved-subtab-taglink" class="saved-sub-section d-none">
+                        <div class="card p-3 shadow-sm border-0 mb-3 bg-white" style="border-radius: 8px;">
+                            <div class="row align-items-end g-2">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;"><i class="fa-regular fa-calendar me-1"></i> Mulai Tanggal</label>
+                                    <input type="date" id="matchFilterStartDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;"><i class="fa-regular fa-calendar-check me-1"></i> Sampai Tanggal</label>
+                                    <input type="date" id="matchFilterEndDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;">
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-sm btn-primary fw-bold px-3 me-1" onclick="calculateMatchedPerformance()">
+                                        <i class="fa-solid fa-filter me-1"></i> Terapkan Filter & Hitung
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary fw-bold px-3" onclick="resetMatchFilter()">
+                                        <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card p-4 shadow-sm border-0 mb-4 bg-white" style="border-radius: 12px;">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fa-solid fa-filter-circle-dollar text-success fs-5 me-3"></i>
+                                <h6 class="fw-bold text-dark mb-0">Analisis Performa TagLink & Set Iklan Terpilih</h6>
+                            </div>
+                            <div class="row align-items-end g-2 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;">Pilih TagLink</label>
+                                    <select id="matchTagLinkSelect" class="form-select form-select-sm text-secondary" style="border-color: #dee2e6;" onchange="calculateMatchedPerformance()"></select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;">Pilih Set Iklan</label>
+                                    <select id="matchAdSetSelect" class="form-select form-select-sm text-secondary" style="border-color: #dee2e6;" onchange="calculateMatchedPerformance()"></select>
+                                </div>
+                            </div>
+                            
+                            <!-- KPI 7 Kolom Hasil Pencocokan -->
+                            <div class="row row-cols-7 g-2" id="match-kpi-container">
+                                <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Spend Meta</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
+                                <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Klik Meta</div><div class="fw-bold fs-6 text-muted">0</div></div></div>
+                                <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Klik Shopee</div><div class="fw-bold fs-6 text-muted">0</div></div></div>
+                                <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Total Pesanan</div><div class="fw-bold fs-6 text-muted">0</div></div></div>
+                                <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Total Komisi</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
+                                <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Profit</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
+                                <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">ROAS</div><div class="fw-bold fs-6 text-muted">0.00x</div></div></div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -516,9 +511,25 @@
                 });
             }
             let title = menuId.charAt(0).toUpperCase() + menuId.slice(1);
-            if(menuId === 'taglink') title = "TagLink Analyze";
             if(menuId === 'savedreports') title = "Saved Reports";
             document.getElementById('menu-title').innerText = title;
+        }
+
+        function switchSavedSubTab(subTabId) {
+            document.querySelectorAll('.saved-sub-section').forEach(sec => sec.classList.add('d-none'));
+            document.getElementById(`saved-subtab-${subTabId}`).classList.remove('d-none');
+
+            const btnDash = document.getElementById('navBtnSavedDashboard');
+            const btnTag = document.getElementById('navBtnSavedTaglink');
+
+            if(subTabId === 'dashboard') {
+                btnDash.className = "btn btn-sm btn-primary fw-bold px-4";
+                btnTag.className = "btn btn-sm btn-outline-secondary fw-bold px-4";
+            } else {
+                btnTag.className = "btn btn-sm btn-primary fw-bold px-4";
+                btnDash.className = "btn btn-sm btn-outline-secondary fw-bold px-4";
+                calculateMatchedPerformance();
+            }
         }
 
         function showToast(message, isDanger = true) {
@@ -609,7 +620,6 @@
 
                 aggregateDataByDate();
                 renderDashboard();
-                renderTagLinkTable();
                 populatePlatformFilter();
                 renderPlatformSource();
                 renderTopTagLink();
@@ -1002,6 +1012,12 @@
             renderSavedSummaries(false, true);
         }
 
+        function resetMatchFilter() {
+            document.getElementById('matchFilterStartDate').value = '';
+            document.getElementById('matchFilterEndDate').value = '';
+            calculateMatchedPerformance();
+        }
+
         function renderSavedSummaries(isDropdownChange = false, isDateFilter = false) {
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
             
@@ -1078,6 +1094,22 @@
                 }
             });
 
+            // Akumulasikan semua taglink dan adset secara global untuk dropdown Performa Taglink
+            let globalTaglinkStats = {};
+            let globalMetaAdSetStats = {};
+            currentReports.forEach(r => {
+                if(r.metaAdsDetails) {
+                    for(let k in r.metaAdsDetails) {
+                        if(!globalMetaAdSetStats[k]) globalMetaAdSetStats[k] = { displayName: r.metaAdsDetails[k].displayName || k };
+                    }
+                }
+                if(r.breakdown) {
+                    r.breakdown.forEach(b => {
+                        globalTaglinkStats[b.displayTag] = true;
+                    });
+                }
+            });
+
             let kpiProfit = kpiK - kpiS;
             let kpiRoas = kpiS > 0 ? (kpiK / kpiS) : 0;
 
@@ -1111,8 +1143,8 @@
                 else metaFilterEl.value = 'all';
             }
 
-            // Populate Dropdown Match TagLink & AdSet di Bawah 3 Kotak
-            populateMatchDropdowns(taglinkStats, metaAdSetStats);
+            // Populate Dropdown Match di Tab Performa Taglink
+            populateMatchDropdowns(globalTaglinkStats, globalMetaAdSetStats);
 
             // 1. Render Sumber Platform
             let platContainer = document.getElementById('savedPlatformListContainer');
@@ -1191,7 +1223,7 @@
             `;
         }
 
-        function populateMatchDropdowns(taglinkStats, metaAdSetStats) {
+        function populateMatchDropdowns(globalTaglinkStats, globalMetaAdSetStats) {
             const tagSelect = document.getElementById('matchTagLinkSelect');
             const adSetSelect = document.getElementById('matchAdSetSelect');
             if(!tagSelect || !adSetSelect) return;
@@ -1202,16 +1234,16 @@
             tagSelect.innerHTML = '';
             adSetSelect.innerHTML = '';
 
-            let sortedTags = Object.keys(taglinkStats).sort();
+            let sortedTags = Object.keys(globalTaglinkStats).sort();
             sortedTags.forEach(t => {
                 let opt = document.createElement('option'); opt.value = t; opt.textContent = t;
                 tagSelect.appendChild(opt);
             });
             if(sortedTags.includes(currentTag)) tagSelect.value = currentTag;
 
-            let sortedAdSets = Object.keys(metaAdSetStats).sort();
+            let sortedAdSets = Object.keys(globalMetaAdSetStats).sort();
             sortedAdSets.forEach(a => {
-                let opt = document.createElement('option'); opt.value = a; opt.textContent = metaAdSetStats[a].displayName;
+                let opt = document.createElement('option'); opt.value = a; opt.textContent = globalMetaAdSetStats[a].displayName;
                 adSetSelect.appendChild(opt);
             });
             if(sortedAdSets.includes(currentAdSet)) adSetSelect.value = currentAdSet;
@@ -1221,18 +1253,30 @@
             let selTag = document.getElementById('matchTagLinkSelect').value;
             let selAdSet = document.getElementById('matchAdSetSelect').value;
 
-            if(!selTag || !selAdSet) {
-                showToast("Pilih TagLink dan Set Iklan terlebih dahulu.", true);
-                return;
+            let startInput = document.getElementById('matchFilterStartDate').value;
+            let endInput = document.getElementById('matchFilterEndDate').value;
+            let startTs = 0;
+            let endTs = Infinity;
+
+            if (startInput) {
+                let p = startInput.split('-');
+                startTs = new Date(p[0], p[1]-1, p[2]).getTime();
+            }
+            if (endInput) {
+                let p = endInput.split('-');
+                endTs = new Date(p[0], p[1]-1, p[2], 23, 59, 59).getTime(); 
             }
 
             let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
             let mSpend = 0, mClicks = 0, mOrders = 0, mKomisi = 0;
 
             currentReports.forEach(r => {
+                let rTs = getTimestampFromIndoDate(r.tanggal);
+                if(rTs < startTs || rTs > endTs) return;
+
                 let rMeta = r.metaAdsDetails || {};
                 let rSpend = 0, rClicks = 0;
-                if(rMeta[selAdSet]) {
+                if(selAdSet && rMeta[selAdSet]) {
                     rSpend = rMeta[selAdSet].spend || 0;
                     rClicks = rMeta[selAdSet].clicks || 0;
                 }
@@ -1241,7 +1285,7 @@
                 let tOrders = 0, tKomisi = 0;
                 if(r.breakdown) {
                     r.breakdown.forEach(b => {
-                        if(b.displayTag === selTag) {
+                        if(!selTag || b.displayTag === selTag) {
                             tagMatched = true;
                             tOrders += b.produkTerjual || 0;
                             tKomisi += b.komisi || 0;
@@ -1250,7 +1294,6 @@
                 }
 
                 if(tagMatched || rSpend > 0) {
-                    // Jika tanggal/laporan bersinggungan
                     mSpend += rSpend;
                     mClicks += rClicks;
                     mOrders += tOrders;
@@ -1270,7 +1313,6 @@
                 ${createKPICard('Profit', formatIDR(mProfit), mProfit >= 0 ? 'text-success' : 'text-danger')}
                 ${createKPICard('ROAS', formatROAS(mRoas, mProfit))}
             `;
-            showToast("Performa berhasil dihitung!", false);
         }
 
         function saveReportToStorage() {
@@ -1426,67 +1468,8 @@
             new bootstrap.Modal(document.getElementById('klikShopeeModal')).show();
         }
 
-        function renderTagLinkTable(filterQuery = '') {
-            const tbody = document.getElementById('tableTagLinkBody');
-            tbody.innerHTML = '';
-            let sortedList = getAggregatedTagLinkData().sort((a, b) => b.komisi - a.komisi);
-            sortedList.forEach(item => {
-                if (filterQuery && !item.displayTag.toLowerCase().includes(filterQuery.toLowerCase())) return;
-                tbody.innerHTML += `<tr><td class="fw-bold text-dark">${item.displayTag}</td><td>${item.klikMeta.toLocaleString('id-ID')}</td><td>${item.klikShopee.toLocaleString('id-ID')}</td><td>${item.produkTerjual.toLocaleString('id-ID')}</td><td>${formatIDR(item.spend)}</td><td class="text-primary fw-bold">${formatIDR(item.komisi)}</td><td class="${item.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(item.profit)}</td><td>${formatROAS(item.roas, item.profit)}</td></tr>`;
-            });
-        }
-        function filterTagLink() { renderTagLinkTable(document.getElementById('searchTagLink').value); }
-
         function downloadCSV(csvContent, filename) {
             const link = document.createElement("a");
             const url = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
             link.setAttribute("href", url); link.setAttribute("download", filename);
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        }
-        function exportDashboardCSV() {
-            let sortedDates = Object.keys(globalData.processedByDate);
-            if(sortedDates.length===0){showToast("Belum ada data.");return;}
-            let csv = "Tanggal,Total Spend Meta,Total Klik Meta,Total Klik Shopee,Total Pesanan,Total Komisi Shopee,Total Profit,ROAS\n";
-            sortedDates.forEach(day => { let t = globalData.processedByDate[day].totals; csv += `${day},${Math.round(t.spend)},${t.klikMeta},${t.klikShopee},${t.produkTerjual},${Math.round(t.komisi)},${Math.round(t.profit)},${t.roas.toFixed(2)}\n`; });
-            downloadCSV(csv, `Rekap_Dashboard_Affiliate_MultiHarian.csv`);
-        }
-        function exportTagLinkCSV() {
-            let sortedList = getAggregatedTagLinkData().sort((a,b)=>b.komisi-a.komisi);
-            if(sortedList.length===0){showToast("Belum ada data.");return;}
-            let csv = "Tag Link (Kumulatif),Klik Meta,Klik Shopee,Pesanan,Spend,Komisi,Profit,ROAS\n";
-            sortedList.forEach(item => { csv += `"${item.displayTag}",${item.klikMeta},${item.klikShopee},${item.produkTerjual},${Math.round(item.spend)},${Math.round(item.komisi)},${Math.round(item.profit)},${item.roas.toFixed(2)}\n`; });
-            downloadCSV(csv, `Analisis_TagLink_Report_Kumulatif.csv`);
-        }
-        function exportSavedReportsJSON() {
-            const savedData = localStorage.getItem('affiliate_saved_reports');
-            if (!savedData || savedData === "[]") { showToast("Belum ada data.", true); return; }
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(new Blob([JSON.stringify(JSON.parse(savedData), null, 4)], { type: 'application/json' }));
-            link.setAttribute("href", url); link.setAttribute("download", `Backup_SavedReports.json`);
-            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
-        }
-        function importSavedReportsJSON(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (!Array.isArray(importedData)) throw new Error("Format tidak valid.");
-                    let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
-                    let c = 0;
-                    importedData.forEach(newR => {
-                        const idx = currentReports.findIndex(r => r.tanggal === newR.tanggal);
-                        if (idx === -1) currentReports.push(newR); else currentReports[idx] = newR;
-                        c++;
-                    });
-                    localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
-                    renderSavedReportsTable(); showToast(`Berhasil import ${c} laporan.`, false);
-                } catch (err) { showToast("Gagal: " + err.message, true); }
-                event.target.value = "";
-            };
-            reader.readAsText(file);
-        }
-    </script>
-</body>
-</html>
+            document.body
