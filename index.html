@@ -304,36 +304,6 @@
                         </div>
                     </div>
 
-                    <!-- TABEL KORELASI / ANALISIS KECOCOKAN (TAGLINK & SET IKLAN) -->
-                    <div class="card p-4 shadow-sm border-0 mb-4" style="border-radius: 12px;">
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                            <div class="d-flex align-items-center">
-                                <i class="fa-solid fa-network-wired text-success fs-5 me-3"></i>
-                                <h6 class="fw-bold text-dark mb-0">Analisis Pencocokan TagLink & Set Iklan</h6>
-                            </div>
-                            <span class="badge bg-light text-dark border" style="font-size: 10px;">Cross-Analysis</span>
-                        </div>
-                        <div class="table-responsive" style="max-height: 280px;">
-                            <table class="table table-sm table-hover align-middle mb-0" style="font-size: 11px;">
-                                <thead class="table-light sticky-top">
-                                    <tr>
-                                        <th>TagLink (Shopee)</th>
-                                        <th>Set Iklan (Meta Ads)</th>
-                                        <th>Spend Meta</th>
-                                        <th>Klik Meta</th>
-                                        <th>Pesanan</th>
-                                        <th>Komisi</th>
-                                        <th>Profit</th>
-                                        <th>ROAS</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="savedCrossAnalysisBody">
-                                    <tr><td colspan="8" class="text-center text-muted fst-italic">Belum ada data korelasi.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
                     <div class="card p-2 shadow-sm border-0 mb-3 text-end bg-white">
                         <div class="d-flex justify-content-end gap-2">
                             <input type="file" id="importJsonFile" accept=".json" style="display: none;" onchange="importSavedReportsJSON(event)">
@@ -1017,7 +987,6 @@
             let platformStats = {};
             let taglinkStats = {};
             let metaAdSetStats = {}; 
-            let crossAnalysisMap = {}; // "tag|adset" -> { tag, adSet, spend, clicks, orders, komisi }
 
             let kpiKM = 0, kpiKS = 0, kpiP = 0, kpiS = 0, kpiK = 0;
 
@@ -1033,12 +1002,6 @@
                 kpiP += report.produkTerjual || 0;
                 kpiS += report.spend || 0;
                 kpiK += report.komisi || 0;
-
-                let reportMetaAds = report.metaAdsDetails || {};
-                let firstAdSetKey = Object.keys(reportMetaAds)[0] || 'Utama / General';
-                let firstAdSetName = reportMetaAds[firstAdSetKey] ? reportMetaAds[firstAdSetKey].displayName : 'Utama / General';
-                let reportSpend = report.spend || 0;
-                let reportClicks = report.klikMeta || 0;
 
                 if(report.metaAdsDetails) {
                     for(let adSetKey in report.metaAdsDetails) {
@@ -1061,14 +1024,6 @@
                         taglinkStats[tag].komisi += item.komisi || 0;
                         taglinkStats[tag].produkTerjual += item.produkTerjual || 0;
                         
-                        // Cross Analysis Mapping
-                        let mapKey = `${tag}___${firstAdSetName}`;
-                        if(!crossAnalysisMap[mapKey]) {
-                            crossAnalysisMap[mapKey] = { tag: tag, adSet: firstAdSetName, spend: reportSpend, clicks: reportClicks, orders: 0, komisi: 0 };
-                        }
-                        crossAnalysisMap[mapKey].orders += item.produkTerjual || 0;
-                        crossAnalysisMap[mapKey].komisi += item.komisi || 0;
-
                         if(selectedPlatformTag === 'all' || selectedPlatformTag === tag) {
                             if(item.productDetails) {
                                 item.productDetails.forEach(p => {
@@ -1191,32 +1146,6 @@
                     <div class="fw-bold fs-5 text-primary">${displayClicks.toLocaleString('id-ID')}</div>
                 </div>
             `;
-
-            // 4. Render Tabel Cross Analysis (TagLink & Set Iklan)
-            let crossBody = document.getElementById('savedCrossAnalysisBody');
-            crossBody.innerHTML = '';
-            let crossList = Object.values(crossAnalysisMap).sort((a, b) => b.komisi - a.komisi);
-
-            if(crossList.length === 0) {
-                crossBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted fst-italic">Belum ada data korelasi.</td></tr>`;
-            } else {
-                crossList.forEach(row => {
-                    let profit = row.komisi - row.spend;
-                    let roas = row.spend > 0 ? (row.komisi / row.spend) : 0;
-                    crossBody.innerHTML += `
-                        <tr>
-                            <td class="fw-bold text-dark">${row.tag}</td>
-                            <td><span class="badge bg-secondary fw-normal">${row.adSet}</span></td>
-                            <td>${formatIDR(row.spend)}</td>
-                            <td>${row.clicks.toLocaleString('id-ID')}</td>
-                            <td>${row.orders.toLocaleString('id-ID')}</td>
-                            <td class="text-primary fw-bold">${formatIDR(row.komisi)}</td>
-                            <td class="${profit >= 0 ? 'text-success' : 'text-danger'} fw-bold">${formatIDR(profit)}</td>
-                            <td>${roas.toFixed(2)}x</td>
-                        </tr>
-                    `;
-                });
-            }
         }
 
         function saveReportToStorage() {
@@ -1259,7 +1188,6 @@
             if (confirm("Hapus SEMUA laporan?")) { localStorage.removeItem('affiliate_saved_reports'); renderSavedReportsTable(); }
         }
 
-        // Tabel Breakdown TagLink di Saved Reports (Kini sudah ditambahkan kolom ROAS)
         function toggleSavedReportDetailInline(dateStr, btnElement) {
             const safeId = "saved-detail-" + dateStr.replace(/\s+/g, '-');
             const existingRow = document.getElementById(safeId);
