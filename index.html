@@ -169,18 +169,33 @@
                     </div>
                 </section>
 
-                <!-- MENU 2: DASHBOARD -->
+                <!-- MENU 2: DASHBOARD UTAMA -->
                 <section id="menu-dashboard" class="menu-section d-none">
                     <div class="row row-cols-7 g-2 mb-4" id="kpi-container"></div>
 
-                    <div class="d-flex justify-content-end gap-2 mb-3">
-                        <button class="btn btn-sm btn-primary px-3 fw-bold" onclick="saveReportToStorage()"><i class="fa-solid fa-floppy-disk me-1"></i> Simpan Laporan</button>
-                        <button class="btn btn-sm btn-success px-3 fw-bold" onclick="exportDashboardCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV Rekap</button>
+                    <!-- Filter Tanggal & Tombol Aksi Sejajar & Serasi -->
+                    <div class="card p-3 shadow-sm border-0 mb-4 bg-white" style="border-radius: 8px;">
+                        <div class="row align-items-end g-2">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;"><i class="fa-regular fa-calendar me-1"></i> Mulai Tanggal</label>
+                                <input type="date" id="mainFilterStartDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;" onchange="renderDashboard()">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;"><i class="fa-regular fa-calendar-check me-1"></i> Sampai Tanggal</label>
+                                <input type="date" id="mainFilterEndDate" class="form-control form-control-sm text-secondary" style="border-color: #dee2e6;" onchange="renderDashboard()">
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <button class="btn btn-sm btn-outline-secondary fw-bold px-3 me-1" onclick="resetMainFilter()"><i class="fa-solid fa-rotate-left me-1"></i> Reset</button>
+                                <button class="btn btn-sm btn-primary px-3 fw-bold me-1" onclick="saveReportToStorage()"><i class="fa-solid fa-floppy-disk me-1"></i> Simpan Laporan</button>
+                                <button class="btn btn-sm btn-success px-3 fw-bold" onclick="exportDashboardCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV Rekap</button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 12px;">
+                    <div class="row mb-4 g-3">
+                        <!-- 1. Sumber Platform -->
+                        <div class="col-md-6">
+                            <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 12px; position: relative; padding-bottom: 35px !important;">
                                 <div class="d-flex align-items-center mb-3">
                                     <i class="fa-solid fa-share-nodes text-primary fs-5 me-3"></i>
                                     <h6 class="fw-bold text-dark mb-0">Sumber Platform</h6>
@@ -189,19 +204,24 @@
                                     <option value="all">Semua TagLink</option>
                                 </select>
                                 <div id="platformListContainer" style="max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
+                                <!-- Total Komisi Pojok Kanan Bawah -->
+                                <div class="position-absolute bottom-0 end-0 p-3 text-success fw-bold" id="mainPlatformTotalKomisi" style="font-size: 12px;"></div>
                             </div>
                         </div>
 
+                        <!-- 2. Data Klik Shopee di Dashboard Utama -->
                         <div class="col-md-6">
-                            <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 12px;">
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fa-solid fa-medal text-warning fs-5 me-3"></i>
-                                        <h6 class="fw-bold text-dark mb-0">Top TagLink</h6>
-                                    </div>
-                                    <span class="badge bg-light text-dark border" style="font-size: 10px;">Max 10</span>
+                            <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 12px; position: relative; padding-bottom: 35px !important;">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fa-solid fa-globe text-success fs-5 me-3"></i>
+                                    <h6 class="fw-bold text-dark mb-0">Data Klik Shopee <span class="text-muted fw-normal" style="font-size: 11px;">(Traffic Source)</span></h6>
                                 </div>
-                                <div id="topTaglinkContainer" style="max-height: 280px; overflow-y: auto; padding-right: 5px;"></div>
+                                <select id="mainTrafficSourceTagFilter" class="form-select form-select-sm mb-3 text-secondary w-auto" style="border-radius: 6px; box-shadow: none; border: 1px solid #dee2e6; font-size:11px;" onchange="renderMainTrafficSource()">
+                                    <option value="all">Semua TagLink</option>
+                                </select>
+                                <div id="mainTrafficSourceContainer" style="max-height: 250px; overflow-y: auto; padding-right: 5px;"></div>
+                                <!-- Total Klik Pojok Kanan Bawah -->
+                                <div class="position-absolute bottom-0 end-0 p-3 text-primary fw-bold" id="mainTrafficTotalClicks" style="font-size: 12px;"></div>
                             </div>
                         </div>
                     </div>
@@ -231,12 +251,18 @@
                 <section id="menu-savedreports" class="menu-section d-none">
                     
                     <!-- Tombol Navigasi Internal Saved Reports -->
-                    <div class="d-flex gap-2 mb-3">
-                        <button id="navBtnSavedDashboard" class="btn btn-sm btn-primary fw-bold px-4" onclick="switchSavedSubTab('dashboard')">
-                            <i class="fa-solid fa-chart-pie me-1"></i> Dashboard
-                        </button>
-                        <button id="navBtnSavedTaglink" class="btn btn-sm btn-outline-secondary fw-bold px-4" onclick="switchSavedSubTab('taglink')">
-                            <i class="fa-solid fa-tags me-1"></i> Performa Taglink
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex gap-2">
+                            <button id="navBtnSavedDashboard" class="btn btn-sm btn-primary fw-bold px-4" onclick="switchSavedSubTab('dashboard')">
+                                <i class="fa-solid fa-chart-pie me-1"></i> Dashboard
+                            </button>
+                            <button id="navBtnSavedTaglink" class="btn btn-sm btn-outline-secondary fw-bold px-4" onclick="switchSavedSubTab('taglink')">
+                                <i class="fa-solid fa-tags me-1"></i> Performa Taglink
+                            </button>
+                        </div>
+                        <!-- Tombol Hide Show 3 Kotak -->
+                        <button class="btn btn-sm btn-outline-dark fw-bold" id="btnToggleBoxes" onclick="toggleSavedBoxes()">
+                            <i class="fa-solid fa-eye-slash me-1"></i> Sembunyikan Kotak Ringkasan
                         </button>
                     </div>
 
@@ -267,11 +293,11 @@
                         <!-- Kotak KPI Saved Reports (1 Line & Bold Label) -->
                         <div class="row row-cols-7 g-2 mb-4" id="saved-kpi-container"></div>
 
-                        <!-- 3 Kotak Ringkasan Berjejer di Satu Baris -->
-                        <div class="row mb-4 g-3">
+                        <!-- 3 Kotak Ringkasan Berjejer di Satu Baris (Bisa di-Hide/Show) -->
+                        <div class="row mb-4 g-3" id="savedSummaryBoxesWrapper">
                             <!-- 1. Sumber Platform -->
                             <div class="col-md-4">
-                                <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
+                                <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px; position: relative; padding-bottom: 35px !important;">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="fa-solid fa-share-nodes text-primary fs-6 me-2"></i>
                                         <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Sumber Platform <br><small class="text-muted fw-normal" style="font-size: 9px;">(Akumulasi Tersimpan)</small></h6>
@@ -280,12 +306,14 @@
                                         <option value="all">Semua TagLink</option>
                                     </select>
                                     <div id="savedPlatformListContainer" style="max-height: 230px; overflow-y: auto; padding-right: 5px;"></div>
+                                    <!-- Total Komisi Pojok Kanan Bawah -->
+                                    <div class="position-absolute bottom-0 end-0 p-3 text-success fw-bold" id="savedPlatformTotalKomisi" style="font-size: 12px;"></div>
                                 </div>
                             </div>
 
-                            <!-- 2. Top TagLink -> DIGANTI DATA KLIK SHOPEE -->
+                            <!-- 2. Data Klik Shopee -->
                             <div class="col-md-4">
-                                <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px;">
+                                <div class="card p-3 shadow-sm border-0 h-100" style="border-radius: 12px; position: relative; padding-bottom: 35px !important;">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="fa-solid fa-globe text-success fs-6 me-2"></i>
                                         <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Data Klik Shopee <br><small class="text-muted fw-normal" style="font-size: 9px;">(Traffic Source Perujuk)</small></h6>
@@ -294,6 +322,8 @@
                                         <option value="all">Semua TagLink</option>
                                     </select>
                                     <div id="savedTrafficSourceContainer" style="max-height: 230px; overflow-y: auto; padding-right: 5px;"></div>
+                                    <!-- Total Klik Pojok Kanan Bawah -->
+                                    <div class="position-absolute bottom-0 end-0 p-3 text-primary fw-bold" id="savedTrafficTotalClicks" style="font-size: 12px;"></div>
                                 </div>
                             </div>
 
@@ -414,12 +444,14 @@
                             </div>
 
                             <!-- List Sumber Platform di Bawah KPI -->
-                            <div class="card p-3 shadow-sm border-0 bg-light" style="border-radius: 10px;">
+                            <div class="card p-3 shadow-sm border-0 bg-light" style="border-radius: 10px; position: relative; padding-bottom: 35px !important;">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="fa-solid fa-share-nodes text-primary fs-6 me-2"></i>
                                     <h6 class="fw-bold text-dark mb-0" style="font-size: 13px;">Sumber Platform <br><small class="text-muted fw-normal" style="font-size: 9px;">(Berdasarkan Pilihan di Atas)</small></h6>
                                 </div>
                                 <div id="matchPlatformListContainer" style="max-height: 220px; overflow-y: auto; padding-right: 5px;"></div>
+                                <!-- Total Komisi Pojok Kanan Bawah -->
+                                <div class="position-absolute bottom-0 end-0 p-3 text-success fw-bold" id="matchPlatformTotalKomisi" style="font-size: 12px;"></div>
                             </div>
                         </div>
                     </div>
@@ -533,6 +565,9 @@
             let title = menuId.charAt(0).toUpperCase() + menuId.slice(1);
             if(menuId === 'savedreports') title = "Saved Reports";
             document.getElementById('menu-title').innerText = title;
+            if(menuId === 'dashboard') {
+                renderDashboard();
+            }
         }
 
         function switchSavedSubTab(subTabId) {
@@ -549,6 +584,20 @@
                 btnTag.className = "btn btn-sm btn-primary fw-bold px-4";
                 btnDash.className = "btn btn-sm btn-outline-secondary fw-bold px-4";
                 calculateMatchedPerformance();
+            }
+        }
+
+        function toggleSavedBoxes() {
+            const wrapper = document.getElementById('savedSummaryBoxesWrapper');
+            const btn = document.getElementById('btnToggleBoxes');
+            if(wrapper.style.display === 'none') {
+                wrapper.style.display = 'flex';
+                btn.innerHTML = `<i class="fa-solid fa-eye-slash me-1"></i> Sembunyikan Kotak Ringkasan`;
+                btn.className = "btn btn-sm btn-outline-dark fw-bold";
+            } else {
+                wrapper.style.display = 'none';
+                btn.innerHTML = `<i class="fa-solid fa-eye me-1"></i> Tampilkan Kotak Ringkasan`;
+                btn.className = "btn btn-sm btn-dark fw-bold";
             }
         }
 
@@ -640,9 +689,6 @@
 
                 aggregateDataByDate();
                 renderDashboard();
-                populatePlatformFilter();
-                renderPlatformSource();
-                renderTopTagLink();
                 renderSavedReportsTable();
                 switchMenu('dashboard');
             } catch (error) {
@@ -804,21 +850,60 @@
             return `<div class="col"><div class="card p-2 bg-white shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">${title}</div><div class="fw-bold fs-6 ${colorClass}">${value}</div></div></div>`;
         }
 
+        function resetMainFilter() {
+            document.getElementById('mainFilterStartDate').value = '';
+            document.getElementById('mainFilterEndDate').value = '';
+            if(document.getElementById('platformFilter')) document.getElementById('platformFilter').value = 'all';
+            if(document.getElementById('mainTrafficSourceTagFilter')) document.getElementById('mainTrafficSourceTagFilter').value = 'all';
+            renderDashboard();
+        }
+
         function renderDashboard() {
-            const agg = globalData.aggregatedTotals;
+            let startInput = document.getElementById('mainFilterStartDate').value;
+            let endInput = document.getElementById('mainFilterEndDate').value;
+            let startTs = 0;
+            let endTs = Infinity;
+
+            if (startInput) {
+                let p = startInput.split('-');
+                startTs = new Date(p[0], p[1]-1, p[2]).getTime();
+            }
+            if (endInput) {
+                let p = endInput.split('-');
+                endTs = new Date(p[0], p[1]-1, p[2], 23, 59, 59).getTime(); 
+            }
+
+            let fKM = 0, fKS = 0, fP = 0, fS = 0, fK = 0;
+            let activeDates = Object.keys(globalData.processedByDate).filter(day => {
+                let rTs = getTimestampFromIndoDate(day);
+                return rTs >= startTs && rTs <= endTs;
+            });
+
+            activeDates.forEach(day => {
+                let t = globalData.processedByDate[day].totals;
+                fKM += t.klikMeta; fKS += t.klikShopee; fP += t.produkTerjual; fS += t.spend; fK += t.komisi;
+            });
+
+            let fProfit = fK - fS;
+            let fRoas = fS > 0 ? (fK / fS) : 0;
+
             document.getElementById('kpi-container').innerHTML = `
-                ${createKPICard('Spend Meta', formatIDR(agg.spend))}
-                ${createKPICard('Klik Meta', agg.klikMeta.toLocaleString('id-ID'))}
-                ${createKPICard('Klik Shopee', agg.klikShopee.toLocaleString('id-ID'))}
-                ${createKPICard('Total Pesanan', agg.produkTerjual.toLocaleString('id-ID'))}
-                ${createKPICard('Total Komisi', formatIDR(agg.komisi), 'text-primary')}
-                ${createKPICard('Profit', formatIDR(agg.profit), agg.profit >= 0 ? 'text-success' : 'text-danger')}
-                ${createKPICard('ROAS', formatROAS(agg.roas, agg.profit))}
+                ${createKPICard('Spend Meta', formatIDR(fS))}
+                ${createKPICard('Klik Meta', fKM.toLocaleString('id-ID'))}
+                ${createKPICard('Klik Shopee', fKS.toLocaleString('id-ID'))}
+                ${createKPICard('Total Pesanan', fP.toLocaleString('id-ID'))}
+                ${createKPICard('Total Komisi', formatIDR(fK), 'text-primary')}
+                ${createKPICard('Profit', formatIDR(fProfit), fProfit >= 0 ? 'text-success' : 'text-danger')}
+                ${createKPICard('ROAS', formatROAS(fRoas, fProfit))}
             `;
+
+            populateMainFilters(activeDates);
+            renderPlatformSource();
+            renderMainTrafficSource();
 
             const tbody = document.getElementById('tableDashboardBody');
             tbody.innerHTML = '';
-            let sortedDates = Object.keys(globalData.processedByDate).sort((a, b) => getTimestampFromIndoDate(b) - getTimestampFromIndoDate(a));
+            let sortedDates = activeDates.sort((a, b) => getTimestampFromIndoDate(b) - getTimestampFromIndoDate(a));
             
             if(sortedDates.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">Data kosong.</td></tr>`; return; }
 
@@ -842,9 +927,54 @@
             });
         }
 
-        function getAggregatedTagLinkData() {
+        function populateMainFilters(activeDates) {
+            let taglinkSet = new Set();
+            activeDates.forEach(day => {
+                let byTag = globalData.processedByDate[day].byTagLink;
+                for(let tag in byTag) {
+                    taglinkSet.add(byTag[tag].displayTag);
+                }
+            });
+
+            const sel1 = document.getElementById('platformFilter');
+            const sel2 = document.getElementById('mainTrafficSourceTagFilter');
+            if(!sel1 || !sel2) return;
+
+            let cur1 = sel1.value;
+            let cur2 = sel2.value;
+
+            sel1.innerHTML = '<option value="all">Semua TagLink</option>';
+            sel2.innerHTML = '<option value="all">Semua TagLink</option>';
+
+            Array.from(taglinkSet).sort().forEach(t => {
+                sel1.appendChild(new Option(t, t));
+                sel2.appendChild(new Option(t, t));
+            });
+
+            if(Array.from(sel1.options).some(o => o.value === cur1)) sel1.value = cur1;
+            if(Array.from(sel2.options).some(o => o.value === cur2)) sel2.value = cur2;
+        }
+
+        function getAggregatedTagLinkDataFiltered() {
+            let startInput = document.getElementById('mainFilterStartDate').value;
+            let endInput = document.getElementById('mainFilterEndDate').value;
+            let startTs = 0;
+            let endTs = Infinity;
+
+            if (startInput) {
+                let p = startInput.split('-');
+                startTs = new Date(p[0], p[1]-1, p[2]).getTime();
+            }
+            if (endInput) {
+                let p = endInput.split('-');
+                endTs = new Date(p[0], p[1]-1, p[2], 23, 59, 59).getTime(); 
+            }
+
             let agg = {};
             for (let day in globalData.processedByDate) {
+                let rTs = getTimestampFromIndoDate(day);
+                if(rTs < startTs || rTs > endTs) continue;
+
                 let tags = globalData.processedByDate[day].byTagLink;
                 for (let t in tags) {
                     let d = tags[t];
@@ -862,21 +992,14 @@
             return Object.values(agg);
         }
 
-        function populatePlatformFilter() {
-            const select = document.getElementById('platformFilter');
-            select.innerHTML = '<option value="all">Semua TagLink</option>';
-            let sortedList = getAggregatedTagLinkData().sort((a, b) => b.komisi - a.komisi);
-            sortedList.forEach(item => {
-                let opt = document.createElement('option'); opt.value = item.displayTag; opt.textContent = item.displayTag; select.appendChild(opt);
-            });
-        }
-
         function renderPlatformSource() {
-            const selectedTag = document.getElementById('platformFilter').value;
+            const selectedTag = document.getElementById('platformFilter') ? document.getElementById('platformFilter').value : 'all';
             const container = document.getElementById('platformListContainer');
+            if(!container) return;
             container.innerHTML = '';
             let platformStats = {};
-            let aggList = getAggregatedTagLinkData();
+            let aggList = getAggregatedTagLinkDataFiltered();
+            let totalKomisiPlatform = 0;
             
             aggList.forEach(item => {
                 if(selectedTag !== 'all' && item.displayTag !== selectedTag) return;
@@ -885,9 +1008,13 @@
                         let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform.toLowerCase() : 'lainnya';
                         if(!platformStats[plat]) platformStats[plat] = { komisi: 0, pesanan: 0 };
                         platformStats[plat].komisi += p.komisi; platformStats[plat].pesanan += 1;
+                        totalKomisiPlatform += p.komisi;
                     });
                 }
             });
+
+            // Set total komisi di pojok kanan bawah
+            document.getElementById('mainPlatformTotalKomisi').innerText = formatIDR(totalKomisiPlatform);
 
             let sortedList = Object.keys(platformStats).map(key => { return { name: key, ...platformStats[key] }; }).sort((a, b) => b.komisi - a.komisi);
             if(sortedList.length === 0) { container.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Tidak ada data.</div>'; return; }
@@ -908,28 +1035,42 @@
             });
         }
 
-        function renderTopTagLink() {
-            const container = document.getElementById('topTaglinkContainer');
+        function renderMainTrafficSource() {
+            const selectedTag = document.getElementById('mainTrafficSourceTagFilter') ? document.getElementById('mainTrafficSourceTagFilter').value : 'all';
+            const container = document.getElementById('mainTrafficSourceContainer');
             if(!container) return;
             container.innerHTML = '';
-            let top10 = getAggregatedTagLinkData().sort((a, b) => b.komisi - a.komisi).slice(0, 10);
+            let trafficStats = {};
+            let aggList = getAggregatedTagLinkDataFiltered();
+            let totalClicks = 0;
 
-            if(top10.length === 0 || top10[0].komisi === 0) { container.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Tidak ada data.</div>'; return; }
+            aggList.forEach(item => {
+                if(selectedTag !== 'all' && item.displayTag !== selectedTag) return;
+                if(item.trafficSourceCounts) {
+                    for(let src in item.trafficSourceCounts) {
+                        if(!trafficStats[src]) trafficStats[src] = 0;
+                        trafficStats[src] += item.trafficSourceCounts[src];
+                        totalClicks += item.trafficSourceCounts[src];
+                    }
+                }
+            });
 
-            let maxKomisi = top10[0].komisi;
-            top10.forEach((item, index) => {
-                if (item.komisi <= 0) return; 
-                let pct = maxKomisi > 0 ? (item.komisi / maxKomisi) * 100 : 0;
+            // Set total klik di pojok kanan bawah
+            document.getElementById('mainTrafficTotalClicks').innerText = totalClicks.toLocaleString('id-ID') + ' Klik';
+
+            let sortedList = Object.keys(trafficStats).map(key => { return { name: key, count: trafficStats[key] }; }).sort((a, b) => b.count - a.count);
+            if(sortedList.length === 0) { container.innerHTML = '<div class="text-muted text-center py-4 fst-italic">Tidak ada data.</div>'; return; }
+
+            let maxCount = sortedList[0].count;
+            sortedList.forEach((item, index) => {
+                let pct = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
                 container.innerHTML += `
                 <div class="compact-list-item">
                     <div class="d-flex justify-content-between align-items-center mb-0">
-                        <span class="compact-list-title">${index + 1}. ${item.displayTag}</span>
-                        <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
+                        <span class="compact-list-title text-wrap" style="max-width: 70%;">${index + 1}. ${item.name}</span>
+                        <span class="compact-list-value text-primary">${item.count.toLocaleString('id-ID')} Klik</span>
                     </div>
-                    <div class="compact-list-sub">
-                        ${item.produkTerjual.toLocaleString('id-ID')} Pesanan
-                    </div>
-                    <div class="compact-progress"><div class="progress-bar bg-warning h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
+                    <div class="compact-progress"><div class="progress-bar bg-success h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
                 </div>`;
             });
         }
@@ -1080,6 +1221,8 @@
             let trafficSourceStats = {};
 
             let kpiKM = 0, kpiKS = 0, kpiP = 0, kpiS = 0, kpiK = 0;
+            let totalKomisiSavedPlatform = 0;
+            let totalClicksSavedTraffic = 0;
 
             const platformFilterEl = document.getElementById('savedPlatformFilter');
             const selectedPlatformTag = platformFilterEl ? platformFilterEl.value : 'all';
@@ -1126,6 +1269,7 @@
                                     if(!platformStats[plat]) platformStats[plat] = { komisi: 0, pesanan: 0 };
                                     platformStats[plat].komisi += p.komisi || 0;
                                     platformStats[plat].pesanan += 1;
+                                    totalKomisiSavedPlatform += p.komisi || 0;
                                 });
                             }
                         }
@@ -1136,12 +1280,17 @@
                                 for(let src in item.trafficSourceCounts) {
                                     if(!trafficSourceStats[src]) trafficSourceStats[src] = 0;
                                     trafficSourceStats[src] += item.trafficSourceCounts[src];
+                                    totalClicksSavedTraffic += item.trafficSourceCounts[src];
                                 }
                             }
                         }
                     });
                 }
             });
+
+            // Set total komisi & klik di pojok kanan bawah kotak Saved Reports
+            document.getElementById('savedPlatformTotalKomisi').innerText = formatIDR(totalKomisiSavedPlatform);
+            document.getElementById('savedTrafficTotalClicks').innerText = totalClicksSavedTraffic.toLocaleString('id-ID') + ' Klik';
 
             // Akumulasikan semua taglink dan adset secara global untuk dropdown Performa Taglink & Traffic Source
             let globalTaglinkStats = {};
@@ -1376,6 +1525,7 @@
 
             let mSpend = 0, mClicks = 0, mShopeeClicks = 0, mOrders = 0, mKomisi = 0;
             let matchPlatformStats = {};
+            let totalKomisiMatchPlatform = 0;
 
             filteredReportsForTab.forEach(r => {
                 let rMeta = r.metaAdsDetails || {};
@@ -1404,12 +1554,16 @@
                                     if(!matchPlatformStats[plat]) matchPlatformStats[plat] = { komisi: 0, pesanan: 0 };
                                     matchPlatformStats[plat].komisi += p.komisi || 0;
                                     matchPlatformStats[plat].pesanan += 1;
+                                    totalKomisiMatchPlatform += p.komisi || 0;
                                 });
                             }
                         }
                     });
                 }
             });
+
+            // Set total komisi di pojok kanan bawah kotak sumber platform tab Performa Taglink
+            document.getElementById('matchPlatformTotalKomisi').innerText = formatIDR(totalKomisiMatchPlatform);
 
             let mProfit = mKomisi - mSpend;
             let mRoas = mSpend > 0 ? (mKomisi / mSpend) : 0;
