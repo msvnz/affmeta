@@ -304,6 +304,40 @@
                         </div>
                     </div>
 
+                    <!-- FITUR PENCINTA KECOCOKAN (TAGLINK & SET IKLAN) DI BAWAH 3 KOTAK -->
+                    <div class="card p-4 shadow-sm border-0 mb-4 bg-white" style="border-radius: 12px;">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fa-solid fa-filter-circle-dollar text-success fs-5 me-3"></i>
+                            <h6 class="fw-bold text-dark mb-0">Analisis Performa TagLink & Set Iklan Terpilih</h6>
+                        </div>
+                        <div class="row align-items-end g-2 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;">Pilih TagLink</label>
+                                <select id="matchTagLinkSelect" class="form-select form-select-sm text-secondary" style="border-color: #dee2e6;"></select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-secondary mb-1" style="font-size: 11px;">Pilih Set Iklan</label>
+                                <select id="matchAdSetSelect" class="form-select form-select-sm text-secondary" style="border-color: #dee2e6;"></select>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-sm btn-success fw-bold px-4" onclick="calculateMatchedPerformance()">
+                                    <i class="fa-solid fa-magnifying-glass-chart me-1"></i> Lihat Performa
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- KPI 7 Kolom Hasil Pencocokan (Ukuran persis sama dengan KPI utama) -->
+                        <div class="row row-cols-7 g-2" id="match-kpi-container">
+                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Spend Meta</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
+                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Klik Meta</div><div class="fw-bold fs-6 text-muted">0</div></div></div>
+                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Klik Shopee</div><div class="fw-bold fs-6 text-muted">0</div></div></div>
+                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Total Pesanan</div><div class="fw-bold fs-6 text-muted">0</div></div></div>
+                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Total Komisi</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
+                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">Profit</div><div class="fw-bold fs-6 text-muted">Rp0</div></div></div>
+                            <div class="col"><div class="card p-2 bg-light shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">ROAS</div><div class="fw-bold fs-6 text-muted">0.00x</div></div></div>
+                        </div>
+                    </div>
+
                     <div class="card p-2 shadow-sm border-0 mb-3 text-end bg-white">
                         <div class="d-flex justify-content-end gap-2">
                             <input type="file" id="importJsonFile" accept=".json" style="display: none;" onchange="importSavedReportsJSON(event)">
@@ -729,6 +763,12 @@
 
         function formatIDR(num) { return 'Rp' + Math.round(num).toLocaleString('id-ID'); }
 
+        // Aturan Global ROAS: Merah jika profit < 0 (boncos), Hijau jika profit >= 0 (cuan)
+        function formatROAS(roasVal, profitVal) {
+            let colorClass = (profitVal < 0) ? 'text-danger' : 'text-success';
+            return `<span class="${colorClass} fw-bold">${roasVal.toFixed(2)}x</span>`;
+        }
+
         // KPI Card dengan Label yang DIBOLD sesuai permintaan
         function createKPICard(title, value, colorClass = '') {
             return `<div class="col"><div class="card p-2 bg-white shadow-sm h-100 kpi-card"><div class="text-muted fw-bold" style="font-size:10px;">${title}</div><div class="fw-bold fs-6 ${colorClass}">${value}</div></div></div>`;
@@ -743,7 +783,7 @@
                 ${createKPICard('Total Pesanan', agg.produkTerjual.toLocaleString('id-ID'))}
                 ${createKPICard('Total Komisi', formatIDR(agg.komisi), 'text-primary')}
                 ${createKPICard('Profit', formatIDR(agg.profit), agg.profit >= 0 ? 'text-success' : 'text-danger')}
-                ${createKPICard('ROAS', agg.roas.toFixed(2) + 'x')}
+                ${createKPICard('ROAS', formatROAS(agg.roas, agg.profit))}
             `;
 
             const tbody = document.getElementById('tableDashboardBody');
@@ -766,7 +806,7 @@
                         <td>${formatIDR(t.spend)}</td>
                         <td class="text-primary fw-bold">${formatIDR(t.komisi)}</td>
                         <td class="${t.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(t.profit)}</td>
-                        <td>${t.roas.toFixed(2)}x</td>
+                        <td>${formatROAS(t.roas, t.profit)}</td>
                     </tr>
                 `;
             });
@@ -1048,7 +1088,7 @@
                 ${createKPICard('Total Pesanan', kpiP.toLocaleString('id-ID'))}
                 ${createKPICard('Total Komisi', formatIDR(kpiK), 'text-primary')}
                 ${createKPICard('Profit', formatIDR(kpiProfit), kpiProfit >= 0 ? 'text-success' : 'text-danger')}
-                ${createKPICard('ROAS', kpiRoas.toFixed(2) + 'x')}
+                ${createKPICard('ROAS', formatROAS(kpiRoas, kpiProfit))}
             `;
 
             if(!isDropdownChange && platformFilterEl) {
@@ -1070,6 +1110,9 @@
                 if(Array.from(metaFilterEl.options).some(o => o.value === currentMetaVal)) metaFilterEl.value = currentMetaVal;
                 else metaFilterEl.value = 'all';
             }
+
+            // Populate Dropdown Match TagLink & AdSet di Bawah 3 Kotak
+            populateMatchDropdowns(taglinkStats, metaAdSetStats);
 
             // 1. Render Sumber Platform
             let platContainer = document.getElementById('savedPlatformListContainer');
@@ -1148,6 +1191,88 @@
             `;
         }
 
+        function populateMatchDropdowns(taglinkStats, metaAdSetStats) {
+            const tagSelect = document.getElementById('matchTagLinkSelect');
+            const adSetSelect = document.getElementById('matchAdSetSelect');
+            if(!tagSelect || !adSetSelect) return;
+
+            let currentTag = tagSelect.value;
+            let currentAdSet = adSetSelect.value;
+
+            tagSelect.innerHTML = '';
+            adSetSelect.innerHTML = '';
+
+            let sortedTags = Object.keys(taglinkStats).sort();
+            sortedTags.forEach(t => {
+                let opt = document.createElement('option'); opt.value = t; opt.textContent = t;
+                tagSelect.appendChild(opt);
+            });
+            if(sortedTags.includes(currentTag)) tagSelect.value = currentTag;
+
+            let sortedAdSets = Object.keys(metaAdSetStats).sort();
+            sortedAdSets.forEach(a => {
+                let opt = document.createElement('option'); opt.value = a; opt.textContent = metaAdSetStats[a].displayName;
+                adSetSelect.appendChild(opt);
+            });
+            if(sortedAdSets.includes(currentAdSet)) adSetSelect.value = currentAdSet;
+        }
+
+        function calculateMatchedPerformance() {
+            let selTag = document.getElementById('matchTagLinkSelect').value;
+            let selAdSet = document.getElementById('matchAdSetSelect').value;
+
+            if(!selTag || !selAdSet) {
+                showToast("Pilih TagLink dan Set Iklan terlebih dahulu.", true);
+                return;
+            }
+
+            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            let mSpend = 0, mClicks = 0, mOrders = 0, mKomisi = 0;
+
+            currentReports.forEach(r => {
+                let rMeta = r.metaAdsDetails || {};
+                let rSpend = 0, rClicks = 0;
+                if(rMeta[selAdSet]) {
+                    rSpend = rMeta[selAdSet].spend || 0;
+                    rClicks = rMeta[selAdSet].clicks || 0;
+                }
+
+                let tagMatched = false;
+                let tOrders = 0, tKomisi = 0;
+                if(r.breakdown) {
+                    r.breakdown.forEach(b => {
+                        if(b.displayTag === selTag) {
+                            tagMatched = true;
+                            tOrders += b.produkTerjual || 0;
+                            tKomisi += b.komisi || 0;
+                        }
+                    });
+                }
+
+                if(tagMatched || rSpend > 0) {
+                    // Jika tanggal/laporan bersinggungan
+                    mSpend += rSpend;
+                    mClicks += rClicks;
+                    mOrders += tOrders;
+                    mKomisi += tKomisi;
+                }
+            });
+
+            let mProfit = mKomisi - mSpend;
+            let mRoas = mSpend > 0 ? (mKomisi / mSpend) : 0;
+
+            document.getElementById('match-kpi-container').innerHTML = `
+                ${createKPICard('Spend Meta', formatIDR(mSpend))}
+                ${createKPICard('Klik Meta', mClicks.toLocaleString('id-ID'))}
+                ${createKPICard('Klik Shopee', '0')}
+                ${createKPICard('Total Pesanan', mOrders.toLocaleString('id-ID'))}
+                ${createKPICard('Total Komisi', formatIDR(mKomisi), 'text-primary')}
+                ${createKPICard('Profit', formatIDR(mProfit), mProfit >= 0 ? 'text-success' : 'text-danger')}
+                ${createKPICard('ROAS', formatROAS(mRoas, mProfit))}
+            `;
+            showToast("Performa berhasil dihitung!", false);
+        }
+
         function saveReportToStorage() {
             let sortedDates = Object.keys(globalData.processedByDate);
             if (sortedDates.length === 0) { showToast("Belum ada data."); return; }
@@ -1219,7 +1344,7 @@
                     <td>${formatIDR(item.spend||0)}</td>
                     <td class="text-primary fw-bold">${formatIDR(item.komisi||0)}</td>
                     <td class="fw-bold ${profit>=0?'text-success':'text-danger'}">${formatIDR(profit)}</td>
-                    <td class="fw-bold">${roas.toFixed(2)}x</td>
+                    <td class="fw-bold">${formatROAS(roas, profit)}</td>
                 </tr>`;
             });
             detailRow.innerHTML = `<td colspan="9" class="p-3"><div class="detail-table-container shadow-sm"><div class="fw-bold text-dark mb-2"><i class="fa-solid fa-tags me-1"></i> Rincian TagLink — ${dateStr}</div><table class="table table-sm table-bordered mb-0 bg-white" style="font-size: 11px;"><thead class="table-light"><tr><th>Tag Link</th><th>Klik Meta</th><th>Klik Shopee</th><th>Pesanan Unik</th><th>Spend</th><th>Komisi</th><th>Profit</th><th>ROAS</th></tr></thead><tbody>${tableRowsHtml}</tbody></table></div></td>`;
@@ -1241,10 +1366,10 @@
             currentReports.forEach(r => {
                 tKM += r.klikMeta||0; tKS += r.klikShopee||0; tP += r.produkTerjual||0; tS += r.spend||0; tK += r.komisi||0; tPr += r.profit||0;
                 let roas = r.roas !== undefined ? r.roas : (r.spend > 0 ? (r.komisi / r.spend) : 0);
-                tbody.innerHTML += `<tr><td class="fw-bold text-orange">${r.tanggal}</td><td>${(r.klikMeta||0).toLocaleString('id-ID')}</td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved('${r.tanggal}', 'ALL')">${(r.klikShopee||0).toLocaleString('id-ID')}</a></td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved('${r.tanggal}', 'ALL')">${(r.produkTerjual||0).toLocaleString('id-ID')}</a></td><td>${formatIDR(r.spend||0)}</td><td class="text-primary fw-bold">${formatIDR(r.komisi||0)}</td><td class="${(r.profit||0)>=0?'text-success':'text-danger'} fw-bold">${formatIDR(r.profit||0)}</td><td>${roas.toFixed(2)}x</td><td><div class="d-flex gap-1"><button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleSavedReportDetailInline('${r.tanggal}', this)"><i class="fa-solid fa-chevron-down"></i> Breakdown</button><button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeReport('${r.tanggal}')"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`;
+                tbody.innerHTML += `<tr><td class="fw-bold text-orange">${r.tanggal}</td><td>${(r.klikMeta||0).toLocaleString('id-ID')}</td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved('${r.tanggal}', 'ALL')">${(r.klikShopee||0).toLocaleString('id-ID')}</a></td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved('${r.tanggal}', 'ALL')">${(r.produkTerjual||0).toLocaleString('id-ID')}</a></td><td>${formatIDR(r.spend||0)}</td><td class="text-primary fw-bold">${formatIDR(r.komisi||0)}</td><td class="${(r.profit||0)>=0?'text-success':'text-danger'} fw-bold">${formatIDR(r.profit||0)}</td><td>${formatROAS(roas, r.profit)}</td><td><div class="d-flex gap-1"><button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleSavedReportDetailInline('${r.tanggal}', this)"><i class="fa-solid fa-chevron-down"></i> Breakdown</button><button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeReport('${r.tanggal}')"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`;
             });
             let totalRoas = tS > 0 ? (tK / tS) : 0;
-            tbody.innerHTML += `<tr class="table-secondary fw-bold border-top border-dark"><td class="text-dark">TOTAL KESELURUHAN</td><td>${tKM.toLocaleString('id-ID')}</td><td>${tKS.toLocaleString('id-ID')}</td><td>${tP.toLocaleString('id-ID')}</td><td>${formatIDR(tS)}</td><td class="text-primary">${formatIDR(tK)}</td><td class="${tPr>=0?'text-success':'text-danger'}">${formatIDR(tPr)}</td><td>${totalRoas.toFixed(2)}x</td><td></td></tr>`;
+            tbody.innerHTML += `<tr class="table-secondary fw-bold border-top border-dark"><td class="text-dark">TOTAL KESELURUHAN</td><td>${tKM.toLocaleString('id-ID')}</td><td>${tKS.toLocaleString('id-ID')}</td><td>${tP.toLocaleString('id-ID')}</td><td>${formatIDR(tS)}</td><td class="text-primary">${formatIDR(tK)}</td><td class="${tPr>=0?'text-success':'text-danger'}">${formatIDR(tPr)}</td><td>${formatROAS(totalRoas, tPr)}</td><td></td></tr>`;
         }
 
         function showDistribusiKlikSaved(dateStr, tagKey) {
@@ -1307,7 +1432,7 @@
             let sortedList = getAggregatedTagLinkData().sort((a, b) => b.komisi - a.komisi);
             sortedList.forEach(item => {
                 if (filterQuery && !item.displayTag.toLowerCase().includes(filterQuery.toLowerCase())) return;
-                tbody.innerHTML += `<tr><td class="fw-bold text-dark">${item.displayTag}</td><td>${item.klikMeta.toLocaleString('id-ID')}</td><td>${item.klikShopee.toLocaleString('id-ID')}</td><td>${item.produkTerjual.toLocaleString('id-ID')}</td><td>${formatIDR(item.spend)}</td><td class="text-primary fw-bold">${formatIDR(item.komisi)}</td><td class="${item.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(item.profit)}</td><td>${item.roas.toFixed(2)}x</td></tr>`;
+                tbody.innerHTML += `<tr><td class="fw-bold text-dark">${item.displayTag}</td><td>${item.klikMeta.toLocaleString('id-ID')}</td><td>${item.klikShopee.toLocaleString('id-ID')}</td><td>${item.produkTerjual.toLocaleString('id-ID')}</td><td>${formatIDR(item.spend)}</td><td class="text-primary fw-bold">${formatIDR(item.komisi)}</td><td class="${item.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(item.profit)}</td><td>${formatROAS(item.roas, item.profit)}</td></tr>`;
             });
         }
         function filterTagLink() { renderTagLinkTable(document.getElementById('searchTagLink').value); }
