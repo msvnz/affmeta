@@ -239,6 +239,7 @@
                                         <th>Komisi</th>
                                         <th>Profit</th>
                                         <th>ROAS</th>
+                                        <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tableDashboardBody"></tbody>
@@ -905,7 +906,7 @@
             tbody.innerHTML = '';
             let sortedDates = activeDates.sort((a, b) => getTimestampFromIndoDate(b) - getTimestampFromIndoDate(a));
             
-            if(sortedDates.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">Data kosong.</td></tr>`; return; }
+            if(sortedDates.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">Data kosong.</td></tr>`; return; }
 
             sortedDates.forEach(day => {
                 let t = globalData.processedByDate[day].totals;
@@ -922,6 +923,7 @@
                         <td class="text-primary fw-bold">${formatIDR(t.komisi)}</td>
                         <td class="${t.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(t.profit)}</td>
                         <td>${formatROAS(t.roas, t.profit)}</td>
+                        <td><div class="d-flex gap-1"><button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleDashboardReportDetailInline('${day}', this)"><i class="fa-solid fa-chevron-down"></i> Breakdown</button></div></td>
                     </tr>
                 `;
             });
@@ -1073,6 +1075,44 @@
                     <div class="compact-progress"><div class="progress-bar bg-success h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
                 </div>`;
             });
+        }
+
+        function toggleDashboardReportDetailInline(dateStr, btnElement) {
+            const safeId = "dash-detail-" + dateStr.replace(/\s+/g, '-');
+            const existingRow = document.getElementById(safeId);
+            if (existingRow) {
+                existingRow.remove(); btnElement.innerHTML = `<i class="fa-solid fa-chevron-down"></i> Breakdown`; btnElement.classList.replace('btn-primary', 'btn-outline-primary');
+                return;
+            }
+            let dayObj = globalData.processedByDate[dateStr];
+            if(!dayObj || !dayObj.byTagLink) return;
+
+            btnElement.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Tutup`; btnElement.classList.replace('btn-outline-primary', 'btn-primary');
+            const parentRow = btnElement.closest('tr');
+            const detailRow = document.createElement('tr');
+            detailRow.id = safeId; detailRow.className = "detail-row";
+            
+            let tableRowsHtml = "";
+            let tagList = Object.values(dayObj.byTagLink).sort((a, b) => b.komisi - a.komisi);
+            tagList.forEach(item => {
+                let profit = item.profit !== undefined ? item.profit : (item.komisi - item.spend);
+                let roas = item.spend > 0 ? (item.komisi / item.spend) : (item.roas || 0);
+                let orderLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikCurrent('${dateStr}', '${item.displayTag}')">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
+                let clickLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalCurrent('${dateStr}', '${item.displayTag}')">${(item.klikShopee || 0).toLocaleString('id-ID')}</a>`;
+                
+                tableRowsHtml += `<tr>
+                    <td class="fw-bold">${item.displayTag}</td>
+                    <td>${(item.klikMeta||0).toLocaleString('id-ID')}</td>
+                    <td>${clickLink}</td>
+                    <td>${orderLink}</td>
+                    <td>${formatIDR(item.spend||0)}</td>
+                    <td class="text-primary fw-bold">${formatIDR(item.komisi||0)}</td>
+                    <td class="fw-bold ${profit>=0?'text-success':'text-danger'}">${formatIDR(profit)}</td>
+                    <td class="fw-bold">${formatROAS(roas, profit)}</td>
+                </tr>`;
+            });
+            detailRow.innerHTML = `<td colspan="9" class="p-3"><div class="detail-table-container shadow-sm"><div class="fw-bold text-dark mb-2"><i class="fa-solid fa-tags me-1"></i> Rincian TagLink — ${dateStr}</div><table class="table table-sm table-bordered mb-0 bg-white" style="font-size: 11px;"><thead class="table-light"><tr><th>Tag Link</th><th>Klik Meta</th><th>Klik Shopee</th><th>Pesanan Unik</th><th>Spend</th><th>Komisi</th><th>Profit</th><th>ROAS</th></tr></thead><tbody>${tableRowsHtml}</tbody></table></div></td>`;
+            parentRow.parentNode.insertBefore(detailRow, parentRow.nextSibling);
         }
 
         function buildOrderAnalysisTableHTML(productDetailsArray) {
