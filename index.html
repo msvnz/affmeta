@@ -124,9 +124,6 @@
                 <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('savedreports')">
                     <i class="fa-solid fa-database me-2"></i>Saved Reports
                 </button>
-                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('arsip'); renderArchiveMonths();">
-                    <i class="fa-solid fa-box-archive me-2"></i>Arsip Bulanan
-                </button>
             </div>
         </div>
 
@@ -480,39 +477,6 @@
                     </div>
                 </section>
 
-                <!-- MENU 4: ARSIP BULANAN -->
-                <section id="menu-arsip" class="menu-section d-none">
-                    <div class="card p-4 shadow-sm border-0 mb-4 bg-white" style="border-radius: 12px;">
-                        <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-folder-open text-warning me-2"></i>Pilih Bulan Arsip</h6>
-                        <div id="archiveMonthButtons" class="d-flex gap-2 flex-wrap">
-                            <!-- Tombol bulan akan di-render di sini oleh JavaScript -->
-                        </div>
-                    </div>
-
-                    <div class="card shadow-sm border-0 d-none" id="archiveTableContainer">
-                        <div class="card-header bg-white border-bottom py-3">
-                            <h6 class="mb-0 fw-bold text-primary" id="archiveTableTitle">Data Arsip</h6>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-dark sticky-top">
-                                    <tr>
-                                        <th>Tanggal Laporan</th>
-                                        <th>Klik Meta</th>
-                                        <th>Klik Shopee</th>
-                                        <th>Pesanan</th>
-                                        <th>Spend</th>
-                                        <th>Komisi</th>
-                                        <th>Profit</th>
-                                        <th>ROAS</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tableArchiveBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
             </div>
         </div>
     </div>
@@ -620,7 +584,6 @@
             }
             let title = menuId.charAt(0).toUpperCase() + menuId.slice(1);
             if(menuId === 'savedreports') title = "Saved Reports";
-            if(menuId === 'arsip') title = "Arsip Bulanan";
             document.getElementById('menu-title').innerText = title;
             if(menuId === 'dashboard') {
                 renderDashboard();
@@ -1802,7 +1765,7 @@
             currentReports.forEach(r => {
                 tKM += r.klikMeta||0; tKS += r.klikShopee||0; tP += r.produkTerjual||0; tS += r.spend||0; tK += r.komisi||0; tPr += r.profit||0;
                 let roas = r.roas !== undefined ? r.roas : (r.spend > 0 ? (r.komisi / r.spend) : 0);
-                tbody.innerHTML += `<tr><td class="fw-bold text-orange">${r.tanggal}</td><td>${(r.klikMeta||0).toLocaleString('id-ID')}</td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved('${r.tanggal}', 'ALL')">${(r.klikShopee||0).toLocaleString('id-ID')}</a></td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved('${r.tanggal}', 'ALL')">${(r.produkTerjual||0).toLocaleString('id-ID')}</a></td><td>${formatIDR(r.spend||0)}</td><td class="text-primary fw-bold">${formatIDR(r.komisi||0)}</td><td class="${(r.profit||0)>=0?'text-success':'text-danger'} fw-bold">${formatIDR(r.profit||0)}</td><td>${formatROAS(roas, r.profit)}</td><td><div class="d-flex gap-1"><button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleSavedReportDetailInline('${r.tanggal}', this)"><i class="fa-solid fa-chevron-down"></i> Breakdown</button><button class="btn btn-xs btn-success py-0 px-2" style="font-size:11px;" onclick="archiveReport('${r.tanggal}')" title="Simpan ke Arsip Bulanan"><i class="fa-solid fa-box-archive"></i></button><button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeReport('${r.tanggal}')"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`;
+                tbody.innerHTML += `<tr><td class="fw-bold text-orange">${r.tanggal}</td><td>${(r.klikMeta||0).toLocaleString('id-ID')}</td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved('${r.tanggal}', 'ALL')">${(r.klikShopee||0).toLocaleString('id-ID')}</a></td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved('${r.tanggal}', 'ALL')">${(r.produkTerjual||0).toLocaleString('id-ID')}</a></td><td>${formatIDR(r.spend||0)}</td><td class="text-primary fw-bold">${formatIDR(r.komisi||0)}</td><td class="${(r.profit||0)>=0?'text-success':'text-danger'} fw-bold">${formatIDR(r.profit||0)}</td><td>${formatROAS(roas, r.profit)}</td><td><div class="d-flex gap-1"><button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleSavedReportDetailInline('${r.tanggal}', this)"><i class="fa-solid fa-chevron-down"></i> Breakdown</button><button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeReport('${r.tanggal}')"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`;
             });
             let totalRoas = tS > 0 ? (tK / tS) : 0;
             tbody.innerHTML += `<tr class="table-secondary fw-bold border-top border-dark"><td class="text-dark">TOTAL KESELURUHAN</td><td>${tKM.toLocaleString('id-ID')}</td><td>${tKS.toLocaleString('id-ID')}</td><td>${tP.toLocaleString('id-ID')}</td><td>${formatIDR(tS)}</td><td class="text-primary">${formatIDR(tK)}</td><td class="${tPr>=0?'text-success':'text-danger'}">${formatIDR(tPr)}</td><td>${formatROAS(totalRoas, tPr)}</td><td></td></tr>`;
@@ -1904,106 +1867,6 @@
                 event.target.value = "";
             };
             reader.readAsText(file);
-        }
-
-        // ==========================================
-        // FUNGSI ARSIP BULANAN
-        // ==========================================
-        function archiveReport(dateStr) {
-            let saved = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
-            let report = saved.find(r => r.tanggal === dateStr);
-            
-            if(report) {
-                let archives = JSON.parse(localStorage.getItem('affiliate_archived_reports')) || [];
-                let existIdx = archives.findIndex(a => a.tanggal === dateStr);
-                
-                if(existIdx >= 0) archives[existIdx] = report;
-                else archives.push(report);
-                
-                localStorage.setItem('affiliate_archived_reports', JSON.stringify(archives));
-                showToast(`Laporan ${dateStr} berhasil diarsipkan!`, false);
-            }
-        }
-
-        function renderArchiveMonths() {
-            let archives = JSON.parse(localStorage.getItem('affiliate_archived_reports')) || [];
-            let container = document.getElementById('archiveMonthButtons');
-            container.innerHTML = '';
-            document.getElementById('archiveTableContainer').classList.add('d-none');
-
-            if(archives.length === 0) {
-                container.innerHTML = '<span class="text-muted fst-italic" style="font-size:12px;">Belum ada laporan yang diarsipkan. (Klik tombol hijau di menu Saved Reports untuk mengarsipkan)</span>';
-                return;
-            }
-
-            let monthSet = new Set();
-            archives.forEach(r => {
-                let parts = r.tanggal.split(' ');
-                if(parts.length === 3) monthSet.add(`${parts[1]} ${parts[2]}`);
-            });
-
-            let months = Array.from(monthSet).sort((a, b) => {
-                return getTimestampFromIndoDate(`01 ${b}`) - getTimestampFromIndoDate(`01 ${a}`);
-            });
-
-            months.forEach(m => {
-                let btn = document.createElement('button');
-                btn.className = 'btn btn-sm btn-outline-primary fw-bold px-3 py-2';
-                btn.innerHTML = `<i class="fa-solid fa-calendar-days me-1"></i> ${m}`;
-                btn.onclick = () => showArchiveTable(m);
-                container.appendChild(btn);
-            });
-        }
-
-        function showArchiveTable(monthYear) {
-            document.getElementById('archiveTableContainer').classList.remove('d-none');
-            document.getElementById('archiveTableTitle').innerText = `Rekap Arsip: ${monthYear}`;
-            
-            document.querySelectorAll('#archiveMonthButtons button').forEach(btn => {
-                btn.classList.replace('btn-primary', 'btn-outline-primary');
-                if(btn.innerText.includes(monthYear)) btn.classList.replace('btn-outline-primary', 'btn-primary');
-            });
-
-            let tbody = document.getElementById('tableArchiveBody');
-            tbody.innerHTML = '';
-
-            let archives = JSON.parse(localStorage.getItem('affiliate_archived_reports')) || [];
-            let filtered = archives.filter(r => {
-                let parts = r.tanggal.split(' ');
-                return parts.length === 3 && `${parts[1]} ${parts[2]}` === monthYear;
-            });
-
-            filtered.sort((a, b) => getTimestampFromIndoDate(b.tanggal) - getTimestampFromIndoDate(a.tanggal));
-
-            let tKM = 0, tKS = 0, tP = 0, tS = 0, tK = 0, tPr = 0;
-            
-            filtered.forEach(r => {
-                tKM += r.klikMeta||0; tKS += r.klikShopee||0; tP += r.produkTerjual||0; tS += r.spend||0; tK += r.komisi||0; tPr += r.profit||0;
-                let roas = r.roas !== undefined ? r.roas : (r.spend > 0 ? (r.komisi / r.spend) : 0);
-                
-                tbody.innerHTML += `<tr>
-                    <td class="fw-bold text-orange">${r.tanggal}</td>
-                    <td>${(r.klikMeta||0).toLocaleString('id-ID')}</td>
-                    <td>${(r.klikShopee||0).toLocaleString('id-ID')}</td>
-                    <td>${(r.produkTerjual||0).toLocaleString('id-ID')}</td>
-                    <td>${formatIDR(r.spend||0)}</td>
-                    <td class="text-primary fw-bold">${formatIDR(r.komisi||0)}</td>
-                    <td class="${(r.profit||0)>=0?'text-success':'text-danger'} fw-bold">${formatIDR(r.profit||0)}</td>
-                    <td>${formatROAS(roas, r.profit)}</td>
-                </tr>`;
-            });
-
-            let totalRoas = tS > 0 ? (tK / tS) : 0;
-            tbody.innerHTML += `<tr class="table-secondary fw-bold border-top border-dark">
-                <td class="text-dark">TOTAL ${monthYear.toUpperCase()}</td>
-                <td>${tKM.toLocaleString('id-ID')}</td>
-                <td>${tKS.toLocaleString('id-ID')}</td>
-                <td>${tP.toLocaleString('id-ID')}</td>
-                <td>${formatIDR(tS)}</td>
-                <td class="text-primary">${formatIDR(tK)}</td>
-                <td class="${tPr>=0?'text-success':'text-danger'}">${formatIDR(tPr)}</td>
-                <td>${formatROAS(totalRoas, tPr)}</td>
-            </tr>`;
         }
     </script>
 </body>
