@@ -1,5 +1,3 @@
-begin;
-
 create table public.saved_reports (
     user_id uuid not null references auth.users(id) on delete cascade,
     report_date text not null,
@@ -24,5 +22,3 @@ create policy "Users manage their own reports"
     for all to authenticated
     using ((select auth.uid()) = user_id)
     with check ((select auth.uid()) = user_id);
-
-commit;
