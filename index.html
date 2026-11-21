@@ -251,6 +251,27 @@
                 <!-- MENU 3: SAVED REPORTS -->
                 <section id="menu-savedreports" class="menu-section d-none">
                     
+                    <div id="report-database-panel" class="card p-3 shadow-sm border-0 mb-3">
+                        <div id="report-database-status" role="status" aria-live="polite" class="small text-secondary"></div>
+                        <form id="report-login" class="row g-2 align-items-end mt-1 d-none">
+                            <div class="col-sm-4">
+                                <label for="report-email" class="form-label small mb-1">Email</label>
+                                <input id="report-email" class="form-control form-control-sm" type="email" autocomplete="username" required>
+                            </div>
+                            <div class="col-sm-4">
+                                <label for="report-password" class="form-label small mb-1">Kata sandi</label>
+                                <input id="report-password" class="form-control form-control-sm" type="password" autocomplete="current-password" required>
+                            </div>
+                            <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">Masuk</button></div>
+                        </form>
+                        <div id="report-database-actions" class="d-flex flex-wrap gap-2 mt-2 d-none">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshSavedReports()">Muat Ulang</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary d-none" id="migrate-reports" onclick="migrateLocalReports()">Pindahkan Laporan Lama</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="signOutOfReports()">Keluar</button>
+                        </div>
+                    </div>
+
+                    <div id="saved-reports-content" class="d-none">
                     <!-- Tombol Navigasi Internal Saved Reports -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="d-flex gap-2">
@@ -475,6 +496,7 @@
                             </div>
                         </div>
                     </div>
+                    </div>
                 </section>
 
             </div>
@@ -553,7 +575,14 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="database-config.js"></script>
+    <script src="report-storage.js"></script>
     <script>
+        const reportStorage = new ReportStorage(window.AFFMETA_DATABASE);
+        let savedReports = [];
+        let reportsLoaded = false;
+        let reportsBusy = false;
+
         let globalData = { 
             meta: [], 
             webClick: [], 
@@ -566,8 +595,10 @@
             document.getElementById('wrapper').classList.toggle('toggled');
         });
 
+        document.getElementById('report-login').addEventListener('submit', signInToReports);
         window.addEventListener('DOMContentLoaded', () => {
-            renderSavedReportsTable();
+            updateReportControls();
+            if (!reportStorage.cloudEnabled) refreshSavedReports();
         });
 
         function switchMenu(menuId) {
@@ -575,18 +606,16 @@
             document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => item.classList.remove('active'));
             document.getElementById(`menu-${menuId}`).classList.remove('d-none');
             
-            if(window.event && window.event.currentTarget && window.event.currentTarget.tagName === 'BUTTON') {
-                window.event.currentTarget.classList.add('active');
-            } else {
-                document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => {
-                    if(item.getAttribute('onclick').includes(menuId)) item.classList.add('active');
-                });
-            }
+            document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => {
+                if (item.getAttribute('onclick').includes(menuId)) item.classList.add('active');
+            });
             let title = menuId.charAt(0).toUpperCase() + menuId.slice(1);
             if(menuId === 'savedreports') title = "Saved Reports";
             document.getElementById('menu-title').innerText = title;
             if(menuId === 'dashboard') {
                 renderDashboard();
+            } else if (menuId === 'savedreports' && (!reportStorage.cloudEnabled || reportStorage.userId)) {
+                refreshSavedReports();
             }
         }
 
@@ -619,6 +648,15 @@
                 btn.innerHTML = `<i class="fa-solid fa-eye me-1"></i> Tampilkan Kotak Ringkasan`;
                 btn.className = "btn btn-sm btn-dark fw-bold";
             }
+        }
+
+        function escapeHTML(value) {
+            const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+            return String(value).replace(/[&<>"']/g, character => entities[character]);
+        }
+
+        function handlerArgument(value) {
+            return escapeHTML(JSON.stringify(String(value)));
         }
 
         function showToast(message, isDanger = true) {
@@ -729,12 +767,12 @@
         function aggregateDataByDate() {
             let dailyData = {};
             function initDayTag(day, tag, rawTag) {
-                if (!dailyData[day]) dailyData[day] = {};
+                if (!dailyData[day]) dailyData[day] = Object.create(null);
                 if (!dailyData[day][tag]) {
                     dailyData[day][tag] = {
                         displayTag: rawTag === 'unassigned' ? 'unassigned' : rawTag.replace(/-+$/, ""),
                         klikMeta: 0, klikShopee: 0, produkTerjual: 0, spend: 0, komisi: 0, profit: 0, roas: 0,
-                        productDetails: [], trafficSources: [], trafficSourceCounts: {}, groupedOrders: {}
+                        productDetails: [], trafficSources: [], trafficSourceCounts: Object.create(null), groupedOrders: Object.create(null)
                     };
                 }
             }
@@ -767,7 +805,7 @@
                     let clicks = parseInt(row['Hasil'] || row['Results'] || 0) || 0; 
                     let spend = cleanNumber(row['Jumlah yang dibelanjakan (IDR)'] || row['Amount spent (IDR)']);
 
-                    if(!dailyMetaAds[day]) dailyMetaAds[day] = {};
+                    if(!dailyMetaAds[day]) dailyMetaAds[day] = Object.create(null);
                     if(!dailyMetaAds[day][adSetKey]) {
                         dailyMetaAds[day][adSetKey] = { displayName: adSetName, spend: 0, clicks: 0 };
                     }
@@ -927,12 +965,12 @@
 
             sortedDates.forEach(day => {
                 let t = globalData.processedByDate[day].totals;
-                let klikShopeeLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalCurrent('${day}', 'ALL')">${t.klikShopee.toLocaleString('id-ID')}</a>`;
-                let pesananLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikCurrent('${day}', 'ALL')">${t.produkTerjual.toLocaleString('id-ID')}</a>`;
+                let klikShopeeLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalCurrent(${handlerArgument(day)}, 'ALL')">${t.klikShopee.toLocaleString('id-ID')}</a>`;
+                let pesananLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikCurrent(${handlerArgument(day)}, 'ALL')">${t.produkTerjual.toLocaleString('id-ID')}</a>`;
                 
                 tbody.innerHTML += `
                     <tr>
-                        <td class="fw-bold text-orange">${day}</td>
+                        <td class="fw-bold text-orange">${escapeHTML(day)}</td>
                         <td>${t.klikMeta.toLocaleString('id-ID')}</td>
                         <td>${klikShopeeLink}</td>
                         <td>${pesananLink}</td>
@@ -940,7 +978,7 @@
                         <td class="text-primary fw-bold">${formatIDR(t.komisi)}</td>
                         <td class="${t.profit >= 0 ? 'text-success':'text-danger'} fw-bold">${formatIDR(t.profit)}</td>
                         <td>${formatROAS(t.roas, t.profit)}</td>
-                        <td><div class="d-flex gap-1"><button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleDashboardReportDetailInline('${day}', this)"><i class="fa-solid fa-chevron-down"></i> Breakdown</button></div></td>
+                        <td><div class="d-flex gap-1"><button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleDashboardReportDetailInline(${handlerArgument(day)}, this)"><i class="fa-solid fa-chevron-down"></i> Breakdown</button></div></td>
                     </tr>
                 `;
             });
@@ -989,7 +1027,7 @@
                 endTs = new Date(p[0], p[1]-1, p[2], 23, 59, 59).getTime(); 
             }
 
-            let agg = {};
+            let agg = Object.create(null);
             for (let day in globalData.processedByDate) {
                 let rTs = getTimestampFromIndoDate(day);
                 if(rTs < startTs || rTs > endTs) continue;
@@ -997,7 +1035,7 @@
                 let tags = globalData.processedByDate[day].byTagLink;
                 for (let t in tags) {
                     let d = tags[t];
-                    if (!agg[t]) agg[t] = { displayTag: d.displayTag, klikMeta: 0, klikShopee: 0, produkTerjual: 0, spend: 0, komisi: 0, profit: 0, roas: 0, productDetails: [], trafficSourceCounts: {} };
+                    if (!agg[t]) agg[t] = { displayTag: d.displayTag, klikMeta: 0, klikShopee: 0, produkTerjual: 0, spend: 0, komisi: 0, profit: 0, roas: 0, productDetails: [], trafficSourceCounts: Object.create(null) };
                     agg[t].klikMeta += d.klikMeta; agg[t].klikShopee += d.klikShopee; agg[t].produkTerjual += d.produkTerjual; agg[t].spend += d.spend; agg[t].komisi += d.komisi;
                     if(d.productDetails) agg[t].productDetails = agg[t].productDetails.concat(d.productDetails);
                     if(d.trafficSourceCounts) {
@@ -1016,7 +1054,7 @@
             const container = document.getElementById('platformListContainer');
             if(!container) return;
             container.innerHTML = '';
-            let platformStats = {};
+            let platformStats = Object.create(null);
             let aggList = getAggregatedTagLinkDataFiltered();
             let totalKomisiPlatform = 0;
             
@@ -1044,7 +1082,7 @@
                 container.innerHTML += `
                 <div class="compact-list-item">
                     <div class="d-flex justify-content-between align-items-center mb-0">
-                        <span class="compact-list-title text-capitalize">${index + 1}. ${item.name}</span>
+                        <span class="compact-list-title text-capitalize">${index + 1}. ${escapeHTML(item.name)}</span>
                         <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
                     </div>
                     <div class="compact-list-sub">${item.pesanan.toLocaleString('id-ID')} Pesanan</div>
@@ -1058,7 +1096,7 @@
             const container = document.getElementById('mainTrafficSourceContainer');
             if(!container) return;
             container.innerHTML = '';
-            let trafficStats = {};
+            let trafficStats = Object.create(null);
             let aggList = getAggregatedTagLinkDataFiltered();
             let totalClicks = 0;
 
@@ -1084,7 +1122,7 @@
                 container.innerHTML += `
                 <div class="compact-list-item">
                     <div class="d-flex justify-content-between align-items-center mb-0">
-                        <span class="compact-list-title text-wrap" style="max-width: 70%;">${index + 1}. ${item.name}</span>
+                        <span class="compact-list-title text-wrap" style="max-width: 70%;">${index + 1}. ${escapeHTML(item.name)}</span>
                         <span class="compact-list-value text-primary">${item.count.toLocaleString('id-ID')} Klik</span>
                     </div>
                     <div class="compact-progress"><div class="progress-bar bg-success h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
@@ -1112,11 +1150,11 @@
             tagList.forEach(item => {
                 let profit = item.profit !== undefined ? item.profit : (item.komisi - item.spend);
                 let roas = item.spend > 0 ? (item.komisi / item.spend) : (item.roas || 0);
-                let orderLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikCurrent('${dateStr}', '${item.displayTag}')">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
-                let clickLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalCurrent('${dateStr}', '${item.displayTag}')">${(item.klikShopee || 0).toLocaleString('id-ID')}</a>`;
+                let orderLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikCurrent(${handlerArgument(dateStr)}, ${handlerArgument(item.displayTag)})">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
+                let clickLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalCurrent(${handlerArgument(dateStr)}, ${handlerArgument(item.displayTag)})">${(item.klikShopee || 0).toLocaleString('id-ID')}</a>`;
                 
                 tableRowsHtml += `<tr>
-                    <td class="fw-bold">${item.displayTag}</td>
+                    <td class="fw-bold">${escapeHTML(item.displayTag)}</td>
                     <td>${(item.klikMeta||0).toLocaleString('id-ID')}</td>
                     <td>${clickLink}</td>
                     <td>${orderLink}</td>
@@ -1126,15 +1164,15 @@
                     <td class="fw-bold">${formatROAS(roas, profit)}</td>
                 </tr>`;
             });
-            detailRow.innerHTML = `<td colspan="9" class="p-3"><div class="detail-table-container shadow-sm"><div class="fw-bold text-dark mb-2"><i class="fa-solid fa-tags me-1"></i> Rincian TagLink — ${dateStr}</div><table class="table table-sm table-bordered mb-0 bg-white" style="font-size: 11px;"><thead class="table-light"><tr><th>Tag Link</th><th>Klik Meta</th><th>Klik Shopee</th><th>Pesanan Unik</th><th>Spend</th><th>Komisi</th><th>Profit</th><th>ROAS</th></tr></thead><tbody>${tableRowsHtml}</tbody></table></div></td>`;
+            detailRow.innerHTML = `<td colspan="9" class="p-3"><div class="detail-table-container shadow-sm"><div class="fw-bold text-dark mb-2"><i class="fa-solid fa-tags me-1"></i> Rincian TagLink — ${escapeHTML(dateStr)}</div><table class="table table-sm table-bordered mb-0 bg-white" style="font-size: 11px;"><thead class="table-light"><tr><th>Tag Link</th><th>Klik Meta</th><th>Klik Shopee</th><th>Pesanan Unik</th><th>Spend</th><th>Komisi</th><th>Profit</th><th>ROAS</th></tr></thead><tbody>${tableRowsHtml}</tbody></table></div></td>`;
             parentRow.parentNode.insertBefore(detailRow, parentRow.nextSibling);
         }
 
         function buildOrderAnalysisTableHTML(productDetailsArray) {
-            let distribution = {};
+            let distribution = Object.create(null);
             productDetailsArray.forEach(p => {
                 let info = getShortDateLabel(p.waktuKlik); 
-                if (!distribution[info.label]) { distribution[info.label] = { ts: info.ts, platforms: {} }; }
+                if (!distribution[info.label]) { distribution[info.label] = { ts: info.ts, platforms: Object.create(null) }; }
                 let plat = p.platform && p.platform.trim() !== '-' && p.platform.trim() !== '' ? p.platform.toLowerCase() : 'lainnya';
                 if (!distribution[info.label].platforms[plat]) distribution[info.label].platforms[plat] = { count: 0, komisi: 0 };
                 distribution[info.label].platforms[plat].count += 1;
@@ -1157,9 +1195,9 @@
                 
                 platArray.forEach((plat, pIdx) => {
                     html += `<tr>`;
-                    if (pIdx === 0) { html += `<td rowspan="${platArray.length}" class="align-middle bg-white">${dk}</td>`; }
+                    if (pIdx === 0) { html += `<td rowspan="${platArray.length}" class="align-middle bg-white">${escapeHTML(dk)}</td>`; }
                     html += `
-                        <td class="text-capitalize">${plat.name}</td>
+                        <td class="text-capitalize">${escapeHTML(plat.name)}</td>
                         <td class="text-center">${plat.count}</td>
                         <td class="text-end text-success fw-bold">${formatIDR(plat.komisi)}</td>
                     </tr>`;
@@ -1189,7 +1227,7 @@
         }
 
         function showKlikShopeeModalCurrent(dateStr, tagKey) {
-            let sourceCounts = {};
+            let sourceCounts = Object.create(null);
             if(tagKey === 'ALL') {
                 document.getElementById('klikShopeeModalLabel').innerText = `Sumber Klik Harian`;
                 document.getElementById('klikShopeeModalSubTitle').innerText = `Total Keseluruhan (Tgl Laporan: ${dateStr})`;
@@ -1214,7 +1252,7 @@
                 tbody.innerHTML = `<tr><td colspan="2" class="text-center text-muted fst-italic py-2">Data tidak tersedia.</td></tr>`;
             } else {
                 sources.forEach(src => {
-                    tbody.innerHTML += `<tr><td class="text-wrap">${src}</td><td class="text-center fw-bold">${sourceCounts[src].toLocaleString('id-ID')}</td></tr>`;
+                    tbody.innerHTML += `<tr><td class="text-wrap">${escapeHTML(src)}</td><td class="text-center fw-bold">${sourceCounts[src].toLocaleString('id-ID')}</td></tr>`;
                 });
             }
             new bootstrap.Modal(document.getElementById('klikShopeeModal')).show();
@@ -1246,7 +1284,7 @@
         }
 
         function renderSavedSummaries(isDropdownChange = false, isDateFilter = false) {
-            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            let currentReports = savedReports;
             
             let startInput = document.getElementById('filterStartDate').value;
             let endInput = document.getElementById('filterEndDate').value;
@@ -1267,10 +1305,10 @@
                 return rTs >= startTs && rTs <= endTs;
             });
 
-            let platformStats = {};
-            let taglinkStats = {};
-            let metaAdSetStats = {}; 
-            let trafficSourceStats = {};
+            let platformStats = Object.create(null);
+            let taglinkStats = Object.create(null);
+            let metaAdSetStats = Object.create(null);
+            let trafficSourceStats = Object.create(null);
 
             let kpiKM = 0, kpiKS = 0, kpiP = 0, kpiS = 0, kpiK = 0;
             let totalKomisiSavedPlatform = 0;
@@ -1341,8 +1379,8 @@
             document.getElementById('savedPlatformTotalKomisi').innerText = formatIDR(totalKomisiSavedPlatform);
             document.getElementById('savedTrafficTotalClicks').innerText = totalClicksSavedTraffic.toLocaleString('id-ID') + ' Klik';
 
-            let globalTaglinkStats = {};
-            let globalMetaAdSetStats = {};
+            let globalTaglinkStats = Object.create(null);
+            let globalMetaAdSetStats = Object.create(null);
             currentReports.forEach(r => {
                 if(r.metaAdsDetails) {
                     for(let k in r.metaAdsDetails) {
@@ -1416,7 +1454,7 @@
                     platContainer.innerHTML += `
                     <div class="compact-list-item">
                         <div class="d-flex justify-content-between align-items-center mb-0">
-                            <span class="compact-list-title text-capitalize">${index + 1}. ${item.name}</span>
+                            <span class="compact-list-title text-capitalize">${index + 1}. ${escapeHTML(item.name)}</span>
                             <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
                         </div>
                         <div class="compact-list-sub">${item.pesanan.toLocaleString('id-ID')} Pesanan</div>
@@ -1438,7 +1476,7 @@
                     trafficContainer.innerHTML += `
                     <div class="compact-list-item">
                         <div class="d-flex justify-content-between align-items-center mb-0">
-                            <span class="compact-list-title text-wrap" style="max-width: 70%;">${index + 1}. ${item.name}</span>
+                            <span class="compact-list-title text-wrap" style="max-width: 70%;">${index + 1}. ${escapeHTML(item.name)}</span>
                             <span class="compact-list-value text-primary">${item.count.toLocaleString('id-ID')} Klik</span>
                         </div>
                         <div class="compact-progress"><div class="progress-bar bg-success h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
@@ -1480,7 +1518,7 @@
             tagContainer.innerHTML = '';
             clickContainer.innerHTML = '';
 
-            let taglinkStats = {};
+            let taglinkStats = Object.create(null);
             filteredReports.forEach(report => {
                 if(report.breakdown) {
                     report.breakdown.forEach(item => {
@@ -1508,7 +1546,7 @@
                     tagContainer.innerHTML += `
                     <div class="compact-list-item">
                         <div class="d-flex justify-content-between align-items-center mb-0">
-                            <span class="compact-list-title">${index + 1}. ${item.displayTag}</span>
+                            <span class="compact-list-title">${index + 1}. ${escapeHTML(item.displayTag)}</span>
                             <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
                         </div>
                         <div class="compact-list-sub">${item.produkTerjual.toLocaleString('id-ID')} Pesanan</div>
@@ -1530,7 +1568,7 @@
                     clickContainer.innerHTML += `
                     <div class="compact-list-item">
                         <div class="d-flex justify-content-between align-items-center mb-0">
-                            <span class="compact-list-title">${index + 1}. ${item.displayTag}</span>
+                            <span class="compact-list-title">${index + 1}. ${escapeHTML(item.displayTag)}</span>
                             <span class="compact-list-value text-primary">${item.klikShopee.toLocaleString('id-ID')} Klik</span>
                         </div>
                         <div class="compact-progress"><div class="progress-bar bg-info h-100" style="width: ${pct}%; border-radius:6px;"></div></div>
@@ -1583,7 +1621,7 @@
                 endTs = new Date(p[0], p[1]-1, p[2], 23, 59, 59).getTime(); 
             }
 
-            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            let currentReports = savedReports;
             let filteredReportsForTab = currentReports.filter(r => {
                 let rTs = getTimestampFromIndoDate(r.tanggal);
                 return rTs >= startTs && rTs <= endTs;
@@ -1593,13 +1631,13 @@
             renderSavedTopTaglinkForTab(filteredReportsForTab);
 
             let mSpend = 0, mClicks = 0, mShopeeClicks = 0, mOrders = 0, mKomisi = 0;
-            let matchPlatformStats = {};
+            let matchPlatformStats = Object.create(null);
             let totalKomisiMatchPlatform = 0;
 
             filteredReportsForTab.forEach(r => {
                 let rMeta = r.metaAdsDetails || {};
                 if(selAdSet) {
-                    if(rMeta[selAdSet]) {
+                    if(Object.hasOwn(rMeta, selAdSet)) {
                         mSpend += rMeta[selAdSet].spend || 0;
                         mClicks += rMeta[selAdSet].clicks || 0;
                     }
@@ -1662,7 +1700,7 @@
                     matchPlatContainer.innerHTML += `
                     <div class="compact-list-item">
                         <div class="d-flex justify-content-between align-items-center mb-0">
-                            <span class="compact-list-title text-capitalize">${index + 1}. ${item.name}</span>
+                            <span class="compact-list-title text-capitalize">${index + 1}. ${escapeHTML(item.name)}</span>
                             <span class="compact-list-value text-success">${formatIDR(item.komisi)}</span>
                         </div>
                         <div class="compact-list-sub">${item.pesanan.toLocaleString('id-ID')} Pesanan</div>
@@ -1672,44 +1710,143 @@
             }
         }
 
-        function saveReportToStorage() {
-            let sortedDates = Object.keys(globalData.processedByDate);
-            if (sortedDates.length === 0) { showToast("Belum ada data."); return; }
-            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
-            let savedCount = 0;
-            sortedDates.forEach(day => {
-                if (!currentReports.some(r => r.tanggal === day)) {
-                    let totals = globalData.processedByDate[day].totals;
-                    let metaDetails = globalData.processedByDate[day].metaAdsDetails || {};
-                    let breakdown = [];
-                    for (let tag in globalData.processedByDate[day].byTagLink) {
-                        let item = globalData.processedByDate[day].byTagLink[tag];
-                        breakdown.push({
-                            displayTag: item.displayTag, klikMeta: item.klikMeta, klikShopee: item.klikShopee, produkTerjual: item.produkTerjual,
-                            spend: item.spend, komisi: item.komisi, profit: item.profit, roas: item.roas,
-                            trafficSourceCounts: item.trafficSourceCounts || {}, productDetails: item.productDetails || [] 
-                        });
-                    }
-                    currentReports.push({ tanggal: day, ...totals, metaAdsDetails: metaDetails, breakdown: breakdown });
-                    savedCount++;
-                }
-            });
-            localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
-            renderSavedReportsTable();
-            if (savedCount > 0) showToast(`${savedCount} baris laporan harian berhasil disimpan!`, false);
-            else showToast(`Data tanggal ini sudah tersimpan.`, true);
+        function migrationKey() {
+            return 'affmeta_migration:' + reportStorage.url + ':' + reportStorage.userId;
         }
 
-        function removeReport(dateStr) {
-            if (confirm(`Hapus laporan tanggal ${dateStr}?`)) {
-                let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
-                localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports.filter(r => r.tanggal !== dateStr)));
-                renderSavedReportsTable();
+        function hasLocalReportsToMigrate() {
+            try {
+                return !localStorage.getItem(migrationKey()) && readLocalReports().length > 0;
+            } catch {
+                return false;
             }
         }
 
+        function updateReportControls() {
+            const cloud = reportStorage.cloudEnabled;
+            const signedIn = Boolean(reportStorage.userId);
+            const status = document.getElementById('report-database-status');
+            status.textContent = reportsBusy ? 'Memproses laporan…' : (!cloud
+                ? 'Penyimpanan di browser ini.'
+                : signedIn
+                    ? (reportsLoaded ? 'Penyimpanan database aktif.' : 'Laporan belum dimuat. Klik Muat Ulang untuk mencoba lagi.')
+                    : 'Masuk untuk mengakses database laporan.');
+            document.getElementById('report-login').classList.toggle('d-none', !cloud || signedIn);
+            document.getElementById('report-database-actions').classList.toggle('d-none', !cloud || !signedIn);
+            document.getElementById('migrate-reports').classList.toggle('d-none', !signedIn || !hasLocalReportsToMigrate());
+            document.getElementById('saved-reports-content').classList.toggle('d-none', cloud && (!signedIn || !reportsLoaded));
+            document.querySelectorAll('#report-database-panel button').forEach(button => {
+                button.disabled = reportsBusy;
+            });
+        }
+
+        async function runReportTask(task, { requiresLogin = true } = {}) {
+            if (reportsBusy) return;
+            if (requiresLogin && reportStorage.cloudEnabled && !reportStorage.userId) {
+                switchMenu('savedreports');
+                document.getElementById('report-email').focus();
+                return;
+            }
+
+            reportsBusy = true;
+            updateReportControls();
+            try {
+                await task();
+            } catch (error) {
+                const message = error instanceof Error && error.message
+                    ? error.message : 'Periksa koneksi atau konfigurasi database, lalu coba lagi.';
+                showToast('Gagal memproses laporan. ' + message);
+            } finally {
+                reportsBusy = false;
+                updateReportControls();
+            }
+        }
+
+        async function loadSavedReports() {
+            savedReports = await reportStorage.list();
+            renderSavedReportsTable();
+            reportsLoaded = true;
+        }
+
+        function refreshSavedReports() {
+            return runReportTask(loadSavedReports);
+        }
+
+        function signInToReports(event) {
+            event.preventDefault();
+            const email = document.getElementById('report-email');
+            const password = document.getElementById('report-password');
+            return runReportTask(async () => {
+                await reportStorage.signIn(email.value.trim(), password.value);
+                password.value = '';
+                await loadSavedReports();
+            }, { requiresLogin: false });
+        }
+
+        function signOutOfReports() {
+            return runReportTask(async () => {
+                await reportStorage.signOut();
+                reportsLoaded = false;
+                savedReports = [];
+                document.getElementById('report-login').reset();
+                renderSavedReportsTable();
+            });
+        }
+
+        async function updateAfterSaving(message, isDanger = false) {
+            try {
+                await loadSavedReports();
+                showToast(message, isDanger);
+            } catch {
+                reportsLoaded = false;
+                showToast(message + ' Daftar laporan gagal dimuat. Silakan muat ulang.');
+            }
+        }
+
+        function migrateLocalReports() {
+            if (!confirm('Pindahkan laporan dari browser ini ke akun database yang sedang masuk? Tanggal yang sudah ada di database akan dilewati.')) return;
+            return runReportTask(async () => {
+                const changed = await reportStorage.save(readLocalReports());
+                localStorage.setItem(migrationKey(), '1');
+                await updateAfterSaving(changed + ' laporan lama ditambahkan ke database.');
+            });
+        }
+
+        function saveReportToStorage() {
+            return runReportTask(async () => {
+                const reports = Object.entries(globalData.processedByDate).map(([day, report]) => {
+                    const breakdown = Object.values(report.byTagLink).map(item => ({
+                        displayTag: item.displayTag, klikMeta: item.klikMeta, klikShopee: item.klikShopee,
+                        produkTerjual: item.produkTerjual, spend: item.spend, komisi: item.komisi,
+                        profit: item.profit, roas: item.roas,
+                        trafficSourceCounts: item.trafficSourceCounts || {}, productDetails: item.productDetails || []
+                    }));
+                    return { tanggal: day, ...report.totals, metaAdsDetails: report.metaAdsDetails || {}, breakdown };
+                });
+
+                if (reports.length === 0) { showToast('Belum ada data.'); return; }
+                const changed = await reportStorage.save(reports);
+                if (changed > 0) await updateAfterSaving(changed + ' laporan harian berhasil disimpan.');
+                else await updateAfterSaving('Data tanggal ini sudah tersimpan.', true);
+            });
+        }
+
+        function removeReport(dateStr) {
+            if (!confirm('Hapus laporan tanggal ' + dateStr + '?')) return;
+            return runReportTask(async () => {
+                await reportStorage.remove(dateStr);
+                savedReports = savedReports.filter(report => report.tanggal !== dateStr);
+                renderSavedReportsTable();
+            });
+        }
+
         function clearAllSavedReports() {
-            if (confirm("Hapus SEMUA laporan?")) { localStorage.removeItem('affiliate_saved_reports'); renderSavedReportsTable(); }
+            if (!confirm('Hapus SEMUA laporan?')) return;
+            return runReportTask(async () => {
+                await reportStorage.remove();
+                savedReports = [];
+                renderSavedReportsTable();
+            });
         }
 
         function toggleSavedReportDetailInline(dateStr, btnElement) {
@@ -1719,7 +1856,7 @@
                 existingRow.remove(); btnElement.innerHTML = `<i class="fa-solid fa-chevron-down"></i> Breakdown`; btnElement.classList.replace('btn-primary', 'btn-outline-primary');
                 return;
             }
-            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            let currentReports = savedReports;
             let foundReport = currentReports.find(r => r.tanggal === dateStr);
             if(!foundReport || !foundReport.breakdown) return;
 
@@ -1732,11 +1869,11 @@
             [...foundReport.breakdown].sort((a, b) => b.komisi - a.komisi).forEach(item => {
                 let profit = item.profit !== undefined ? item.profit : (item.komisi - item.spend);
                 let roas = item.spend > 0 ? (item.komisi / item.spend) : (item.roas || 0);
-                let orderLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved('${dateStr}', '${item.displayTag}')">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
-                let clickLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved('${dateStr}', '${item.displayTag}')">${(item.klikShopee || 0).toLocaleString('id-ID')}</a>`;
+                let orderLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved(${handlerArgument(dateStr)}, ${handlerArgument(item.displayTag)})">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
+                let clickLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved(${handlerArgument(dateStr)}, ${handlerArgument(item.displayTag)})">${(item.klikShopee || 0).toLocaleString('id-ID')}</a>`;
                 
                 tableRowsHtml += `<tr>
-                    <td class="fw-bold">${item.displayTag}</td>
+                    <td class="fw-bold">${escapeHTML(item.displayTag)}</td>
                     <td>${(item.klikMeta||0).toLocaleString('id-ID')}</td>
                     <td>${clickLink}</td>
                     <td>${orderLink}</td>
@@ -1746,7 +1883,7 @@
                     <td class="fw-bold">${formatROAS(roas, profit)}</td>
                 </tr>`;
             });
-            detailRow.innerHTML = `<td colspan="9" class="p-3"><div class="detail-table-container shadow-sm"><div class="fw-bold text-dark mb-2"><i class="fa-solid fa-tags me-1"></i> Rincian TagLink — ${dateStr}</div><table class="table table-sm table-bordered mb-0 bg-white" style="font-size: 11px;"><thead class="table-light"><tr><th>Tag Link</th><th>Klik Meta</th><th>Klik Shopee</th><th>Pesanan Unik</th><th>Spend</th><th>Komisi</th><th>Profit</th><th>ROAS</th></tr></thead><tbody>${tableRowsHtml}</tbody></table></div></td>`;
+            detailRow.innerHTML = `<td colspan="9" class="p-3"><div class="detail-table-container shadow-sm"><div class="fw-bold text-dark mb-2"><i class="fa-solid fa-tags me-1"></i> Rincian TagLink — ${escapeHTML(dateStr)}</div><table class="table table-sm table-bordered mb-0 bg-white" style="font-size: 11px;"><thead class="table-light"><tr><th>Tag Link</th><th>Klik Meta</th><th>Klik Shopee</th><th>Pesanan Unik</th><th>Spend</th><th>Komisi</th><th>Profit</th><th>ROAS</th></tr></thead><tbody>${tableRowsHtml}</tbody></table></div></td>`;
             parentRow.parentNode.insertBefore(detailRow, parentRow.nextSibling);
         }
 
@@ -1755,34 +1892,34 @@
 
             const tbody = document.getElementById('tableSavedReportsBody');
             if(!tbody) return;
-            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            let currentReports = savedReports;
             if (currentReports.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">Belum ada laporan yang disimpan.</td></tr>`; return; }
 
-            currentReports.sort((a, b) => getTimestampFromIndoDate(b.tanggal) - getTimestampFromIndoDate(a.tanggal));
+            currentReports = [...currentReports].sort((a, b) => getTimestampFromIndoDate(b.tanggal) - getTimestampFromIndoDate(a.tanggal));
             tbody.innerHTML = '';
             
             let tKM = 0, tKS = 0, tP = 0, tS = 0, tK = 0, tPr = 0;
             currentReports.forEach(r => {
                 tKM += r.klikMeta||0; tKS += r.klikShopee||0; tP += r.produkTerjual||0; tS += r.spend||0; tK += r.komisi||0; tPr += r.profit||0;
                 let roas = r.roas !== undefined ? r.roas : (r.spend > 0 ? (r.komisi / r.spend) : 0);
-                tbody.innerHTML += `<tr><td class="fw-bold text-orange">${r.tanggal}</td><td>${(r.klikMeta||0).toLocaleString('id-ID')}</td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved('${r.tanggal}', 'ALL')">${(r.klikShopee||0).toLocaleString('id-ID')}</a></td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved('${r.tanggal}', 'ALL')">${(r.produkTerjual||0).toLocaleString('id-ID')}</a></td><td>${formatIDR(r.spend||0)}</td><td class="text-primary fw-bold">${formatIDR(r.komisi||0)}</td><td class="${(r.profit||0)>=0?'text-success':'text-danger'} fw-bold">${formatIDR(r.profit||0)}</td><td>${formatROAS(roas, r.profit)}</td><td><div class="d-flex gap-1"><button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleSavedReportDetailInline('${r.tanggal}', this)"><i class="fa-solid fa-chevron-down"></i> Breakdown</button><button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeReport('${r.tanggal}')"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`;
+                tbody.innerHTML += `<tr><td class="fw-bold text-orange">${escapeHTML(r.tanggal)}</td><td>${(r.klikMeta||0).toLocaleString('id-ID')}</td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved(${handlerArgument(r.tanggal)}, 'ALL')">${(r.klikShopee||0).toLocaleString('id-ID')}</a></td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved(${handlerArgument(r.tanggal)}, 'ALL')">${(r.produkTerjual||0).toLocaleString('id-ID')}</a></td><td>${formatIDR(r.spend||0)}</td><td class="text-primary fw-bold">${formatIDR(r.komisi||0)}</td><td class="${(r.profit||0)>=0?'text-success':'text-danger'} fw-bold">${formatIDR(r.profit||0)}</td><td>${formatROAS(roas, r.profit)}</td><td><div class="d-flex gap-1"><button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleSavedReportDetailInline(${handlerArgument(r.tanggal)}, this)"><i class="fa-solid fa-chevron-down"></i> Breakdown</button><button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeReport(${handlerArgument(r.tanggal)})"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`;
             });
             let totalRoas = tS > 0 ? (tK / tS) : 0;
             tbody.innerHTML += `<tr class="table-secondary fw-bold border-top border-dark"><td class="text-dark">TOTAL KESELURUHAN</td><td>${tKM.toLocaleString('id-ID')}</td><td>${tKS.toLocaleString('id-ID')}</td><td>${tP.toLocaleString('id-ID')}</td><td>${formatIDR(tS)}</td><td class="text-primary">${formatIDR(tK)}</td><td class="${tPr>=0?'text-success':'text-danger'}">${formatIDR(tPr)}</td><td>${formatROAS(totalRoas, tPr)}</td><td></td></tr>`;
         }
 
         function showDistribusiKlikSaved(dateStr, tagKey) {
-            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            let currentReports = savedReports;
             let report = currentReports.find(r => r.tanggal === dateStr);
             if(!report) return;
             
             let details = [];
             if(tagKey === 'ALL') {
-                report.breakdown.forEach(b => { if(b.productDetails) details = details.concat(b.productDetails); });
+                (report.breakdown || []).forEach(b => { if(b.productDetails) details = details.concat(b.productDetails); });
                 document.getElementById('distribusiModalLabel').innerText = `Analisis Pesanan Harian`;
                 document.getElementById('distribusiModalSubTitle').innerText = `Total Keseluruhan (Tgl Pesanan: ${dateStr})`;
             } else {
-                let targetItem = report.breakdown.find(b => b.displayTag === tagKey);
+                let targetItem = (report.breakdown || []).find(b => b.displayTag === tagKey);
                 if(!targetItem) return;
                 details = targetItem.productDetails || [];
                 document.getElementById('distribusiModalLabel').innerText = `Analisis Pesanan - ${tagKey}`;
@@ -1794,13 +1931,13 @@
         }
 
         function showKlikShopeeModalSaved(dateStr, tagKey) {
-            let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
+            let currentReports = savedReports;
             let report = currentReports.find(r => r.tanggal === dateStr);
             if(!report) return;
             
-            let sourceCounts = {};
+            let sourceCounts = Object.create(null);
             if(tagKey === 'ALL') {
-                report.breakdown.forEach(b => {
+                (report.breakdown || []).forEach(b => {
                     for(let src in b.trafficSourceCounts) {
                         if(!sourceCounts[src]) sourceCounts[src] = 0;
                         sourceCounts[src] += b.trafficSourceCounts[src];
@@ -1809,7 +1946,7 @@
                 document.getElementById('klikShopeeModalLabel').innerText = `Sumber Klik Harian`;
                 document.getElementById('klikShopeeModalSubTitle').innerText = `Total Keseluruhan (Tgl Laporan: ${dateStr})`;
             } else {
-                let targetItem = report.breakdown.find(b => b.displayTag === tagKey);
+                let targetItem = (report.breakdown || []).find(b => b.displayTag === tagKey);
                 if(!targetItem) return;
                 sourceCounts = targetItem.trafficSourceCounts || {};
                 document.getElementById('klikShopeeModalLabel').innerText = `Sumber Klik - ${tagKey}`;
@@ -1820,7 +1957,7 @@
             tbody.innerHTML = '';
             let sources = Object.keys(sourceCounts).sort((a, b) => sourceCounts[b] - sourceCounts[a]);
             if (sources.length === 0) tbody.innerHTML = `<tr><td colspan="2" class="text-center text-muted fst-italic py-2">Data tidak tersedia.</td></tr>`;
-            else sources.forEach(src => tbody.innerHTML += `<tr><td class="text-wrap">${src}</td><td class="text-center fw-bold">${sourceCounts[src].toLocaleString('id-ID')}</td></tr>`);
+            else sources.forEach(src => tbody.innerHTML += `<tr><td class="text-wrap">${escapeHTML(src)}</td><td class="text-center fw-bold">${sourceCounts[src].toLocaleString('id-ID')}</td></tr>`);
             
             new bootstrap.Modal(document.getElementById('klikShopeeModal')).show();
         }
@@ -1839,34 +1976,26 @@
             downloadCSV(csv, `Rekap_Dashboard_Affiliate_MultiHarian.csv`);
         }
         function exportSavedReportsJSON() {
-            const savedData = localStorage.getItem('affiliate_saved_reports');
-            if (!savedData || savedData === "[]") { showToast("Belum ada data.", true); return; }
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(new Blob([JSON.stringify(JSON.parse(savedData), null, 4)], { type: 'application/json' }));
-            link.setAttribute("href", url); link.setAttribute("download", `Backup_SavedReports.json`);
-            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+            if (savedReports.length === 0) { showToast('Belum ada data.'); return; }
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(new Blob([JSON.stringify(savedReports, null, 4)], { type: 'application/json' }));
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'Backup_SavedReports.json');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
         }
+
         function importSavedReportsJSON(event) {
             const file = event.target.files[0];
+            event.target.value = '';
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (!Array.isArray(importedData)) throw new Error("Format tidak valid.");
-                    let currentReports = JSON.parse(localStorage.getItem('affiliate_saved_reports')) || [];
-                    let c = 0;
-                    importedData.forEach(newR => {
-                        const idx = currentReports.findIndex(r => r.tanggal === newR.tanggal);
-                        if (idx === -1) currentReports.push(newR); else currentReports[idx] = newR;
-                        c++;
-                    });
-                    localStorage.setItem('affiliate_saved_reports', JSON.stringify(currentReports));
-                    renderSavedReportsTable(); showToast(`Berhasil import ${c} laporan.`, false);
-                } catch (err) { showToast("Gagal: " + err.message, true); }
-                event.target.value = "";
-            };
-            reader.readAsText(file);
+            return runReportTask(async () => {
+                const imported = JSON.parse(await file.text());
+                const changed = await reportStorage.save(imported, { replace: true });
+                await updateAfterSaving('Berhasil mengimpor ' + changed + ' laporan.');
+            });
         }
     </script>
 </body>
