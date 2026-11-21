@@ -77,12 +77,19 @@ class ReportStorage {
     }
 
     async list() {
-        if (!this.cloudEnabled) return readLocalReports();
+        return this.cloudEnabled ? this.listCloudReports('saved_reports') : readLocalReports();
+    }
+
+    async listArchive() {
+        return this.listCloudReports('archived_reports');
+    }
+
+    async listCloudReports(table) {
 
         const reports = [];
         let cursor;
         while (true) {
-            let query = this.client.from('saved_reports')
+            let query = this.client.from(table)
                 .select('report_date, report')
                 .eq('user_id', this.userId)
                 .order('report_date')
@@ -109,12 +116,22 @@ class ReportStorage {
             return changed.length;
         }
 
+        return this.saveCloudReports('saved_reports', reports, replace);
+    }
+
+    async importArchive(reports) {
+        validateReports(reports);
+        if (reports.length === 0) throw new Error('File JSON tidak berisi laporan.');
+        return this.saveCloudReports('archived_reports', reports, false);
+    }
+
+    async saveCloudReports(table, reports, replace) {
         const rows = mergeReports([], reports, replace).map(report => ({
             user_id: this.userId,
             report_date: report.tanggal,
             report
         }));
-        const { count, error } = await this.client.from('saved_reports').upsert(rows, {
+        const { count, error } = await this.client.from(table).upsert(rows, {
             onConflict: 'user_id,report_date',
             ignoreDuplicates: !replace,
             count: 'exact'

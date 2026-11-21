@@ -4,7 +4,7 @@ Dashboard laporan Meta Ads dan Shopee Affiliate. GitHub Pages melayani situs sta
 
 ## Aktifkan database
 
-1. Buka [Supabase Dashboard](https://supabase.com/dashboard) dan buat proyek untuk Affmeta. Jalankan [migrasi tabel laporan](supabase/migrations/20261121035805_saved_reports.sql) sekali di **SQL Editor**.
+1. Buka [Supabase Dashboard](https://supabase.com/dashboard) dan buat proyek untuk Affmeta. Jalankan [migrasi tabel laporan](supabase/migrations/20261121035805_saved_reports.sql) dan [migrasi tabel arsip](supabase/migrations/20261121043405_archived_reports.sql) sekali di **SQL Editor**.
 2. Di **Authentication**, pastikan login email aktif dan nonaktifkan pendaftaran publik jika dashboard hanya dipakai pribadi. Buat akun yang akan dipakai di **Authentication → Users**.
 3. Isi [database-config.js](database-config.js) dengan **Project URL** (misalnya `https://project-ref.supabase.co`) dan **Publishable key** (`sb_publishable_…`) dari proyek. File ini dilayani GitHub Pages. Gunakan hanya publishable key.
 4. Publikasikan perubahan di GitHub Pages seperti biasa. Buka **Saved Reports**, masuk dengan akun Supabase yang dibuat, dan simpan satu laporan. Masuk dengan akun yang sama di perangkat lain untuk memeriksa bahwa laporan tersedia. Klik **Muat Ulang** untuk melihat perubahan dari perangkat lain. Memuat ulang halaman akan meminta login kembali.
@@ -18,3 +18,9 @@ Jika kedua isian konfigurasi kosong, dashboard menggunakan penyimpanan lama di b
 3. Bandingkan tanggal dan total laporan. Pemindahan melewati tanggal yang sudah ada di database serta mempertahankan data lama di browser. Ulangi pada tiap profil browser yang punya laporan tersendiri.
 
 Gunakan **Import JSON** untuk memulihkan cadangan. Import mengganti laporan pada tanggal yang sama dalam akun yang sedang digunakan.
+
+## Arsip Bulanan
+
+Buka **Arsip Bulanan → Import JSON** dan pilih file cadangan dari **Saved Reports → Export JSON Data**. Satu file bisa berisi beberapa bulan. Pilih tombol bulan dan tahun untuk melihat tabel, total, dan rincian TagLink.
+
+Arsip tersimpan di Supabase pada akun yang sedang digunakan. Jika tanggal sudah ada di arsip, versi arsip tersebut dipertahankan. Impor ke **Arsip Bulanan** tidak mengubah laporan di **Saved Reports**.

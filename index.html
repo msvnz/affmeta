@@ -124,6 +124,9 @@
                 <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('savedreports')">
                     <i class="fa-solid fa-database me-2"></i>Saved Reports
                 </button>
+                <button class="list-group-item list-group-item-action bg-transparent text-white" onclick="switchMenu('monthlyarchive')">
+                    <i class="fa-solid fa-box-archive me-2"></i>Arsip Bulanan
+                </button>
             </div>
         </div>
 
@@ -248,28 +251,28 @@
                     </div>
                 </section>
 
+                <div id="report-database-panel" class="card p-3 shadow-sm border-0 mb-3 d-none">
+                    <div id="report-database-status" role="status" aria-live="polite" class="small text-secondary"></div>
+                    <form id="report-login" class="row g-2 align-items-end mt-1 d-none">
+                        <div class="col-sm-4">
+                            <label for="report-email" class="form-label small mb-1">Email</label>
+                            <input id="report-email" class="form-control form-control-sm" type="email" autocomplete="username" required>
+                        </div>
+                        <div class="col-sm-4">
+                            <label for="report-password" class="form-label small mb-1">Kata sandi</label>
+                            <input id="report-password" class="form-control form-control-sm" type="password" autocomplete="current-password" required>
+                        </div>
+                        <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">Masuk</button></div>
+                    </form>
+                    <div id="report-database-actions" class="d-flex flex-wrap gap-2 mt-2 d-none">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshSelectedReports()">Muat Ulang</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary d-none" id="migrate-reports" onclick="migrateLocalReports()">Pindahkan Laporan Lama</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="signOutOfReports()">Keluar</button>
+                    </div>
+                </div>
+
                 <!-- MENU 3: SAVED REPORTS -->
                 <section id="menu-savedreports" class="menu-section d-none">
-                    
-                    <div id="report-database-panel" class="card p-3 shadow-sm border-0 mb-3">
-                        <div id="report-database-status" role="status" aria-live="polite" class="small text-secondary"></div>
-                        <form id="report-login" class="row g-2 align-items-end mt-1 d-none">
-                            <div class="col-sm-4">
-                                <label for="report-email" class="form-label small mb-1">Email</label>
-                                <input id="report-email" class="form-control form-control-sm" type="email" autocomplete="username" required>
-                            </div>
-                            <div class="col-sm-4">
-                                <label for="report-password" class="form-label small mb-1">Kata sandi</label>
-                                <input id="report-password" class="form-control form-control-sm" type="password" autocomplete="current-password" required>
-                            </div>
-                            <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">Masuk</button></div>
-                        </form>
-                        <div id="report-database-actions" class="d-flex flex-wrap gap-2 mt-2 d-none">
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshSavedReports()">Muat Ulang</button>
-                            <button type="button" class="btn btn-sm btn-outline-primary d-none" id="migrate-reports" onclick="migrateLocalReports()">Pindahkan Laporan Lama</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="signOutOfReports()">Keluar</button>
-                        </div>
-                    </div>
 
                     <div id="saved-reports-content" class="d-none">
                     <!-- Tombol Navigasi Internal Saved Reports -->
@@ -499,6 +502,45 @@
                     </div>
                 </section>
 
+                <section id="menu-monthlyarchive" class="menu-section d-none">
+                    <div id="monthly-archive-content" class="d-none">
+                        <div class="card p-3 shadow-sm border-0 mb-3">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                                <h2 class="fs-6 fw-bold mb-0">Pilih Bulan</h2>
+                                <div>
+                                    <input type="file" id="importArchiveJsonFile" accept=".json,application/json" hidden onchange="importArchiveJSON(event)">
+                                    <button type="button" id="import-archive-button" class="btn btn-sm btn-primary fw-bold" onclick="document.getElementById('importArchiveJsonFile').click()">
+                                        <i class="fa-solid fa-file-import me-1"></i> Import JSON
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="archive-month-buttons" class="d-flex flex-wrap gap-2" role="group" aria-label="Bulan arsip"></div>
+                            <p id="archive-empty" class="small text-muted mb-0" role="status">Belum ada arsip. Gunakan Import JSON untuk menambahkan laporan lama.</p>
+                        </div>
+                        <div id="archive-table" class="card shadow-sm border-0 d-none">
+                            <h2 id="archive-table-title" class="fs-6 fw-bold px-3 pt-3 mb-3"></h2>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" aria-labelledby="archive-table-title">
+                                    <thead class="table-dark sticky-top">
+                                        <tr>
+                                            <th>Tanggal Laporan</th>
+                                            <th>Klik Meta</th>
+                                            <th>Klik Shopee</th>
+                                            <th class="col-pesanan">Pesanan</th>
+                                            <th>Spend</th>
+                                            <th>Komisi</th>
+                                            <th>Profit</th>
+                                            <th>ROAS</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableArchiveReportsBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
             </div>
         </div>
     </div>
@@ -580,7 +622,11 @@
     <script>
         const reportStorage = new ReportStorage(window.AFFMETA_DATABASE);
         let savedReports = [];
+        let archivedReports = [];
+        let selectedArchiveMonth = null;
+        let activeMenu = 'upload';
         let reportsLoaded = false;
+        let archiveLoaded = false;
         let reportsBusy = false;
 
         let globalData = { 
@@ -602,6 +648,7 @@
         });
 
         function switchMenu(menuId) {
+            activeMenu = menuId;
             document.querySelectorAll('.menu-section').forEach(section => section.classList.add('d-none'));
             document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(item => item.classList.remove('active'));
             document.getElementById(`menu-${menuId}`).classList.remove('d-none');
@@ -611,12 +658,17 @@
             });
             let title = menuId.charAt(0).toUpperCase() + menuId.slice(1);
             if(menuId === 'savedreports') title = "Saved Reports";
+            if(menuId === 'monthlyarchive') title = "Arsip Bulanan";
             document.getElementById('menu-title').innerText = title;
             if(menuId === 'dashboard') {
                 renderDashboard();
-            } else if (menuId === 'savedreports' && (!reportStorage.cloudEnabled || reportStorage.userId)) {
-                refreshSavedReports();
+            } else if (
+                (menuId === 'savedreports' && !reportStorage.cloudEnabled) ||
+                ((menuId === 'savedreports' || menuId === 'monthlyarchive') && reportStorage.userId)
+            ) {
+                refreshSelectedReports();
             }
+            updateReportControls();
         }
 
         function switchSavedSubTab(subTabId) {
@@ -1725,16 +1777,21 @@
         function updateReportControls() {
             const cloud = reportStorage.cloudEnabled;
             const signedIn = Boolean(reportStorage.userId);
+            const inArchive = activeMenu === 'monthlyarchive';
+            const loaded = inArchive ? archiveLoaded : reportsLoaded;
+            document.getElementById('report-database-panel').classList.toggle('d-none', !inArchive && activeMenu !== 'savedreports');
             const status = document.getElementById('report-database-status');
             status.textContent = reportsBusy ? 'Memproses laporan…' : (!cloud
-                ? 'Penyimpanan di browser ini.'
+                ? (inArchive ? 'Arsip Bulanan memerlukan koneksi Supabase.' : 'Penyimpanan di browser ini.')
                 : signedIn
-                    ? (reportsLoaded ? 'Penyimpanan database aktif.' : 'Laporan belum dimuat. Klik Muat Ulang untuk mencoba lagi.')
+                    ? (loaded ? 'Penyimpanan database aktif.' : 'Laporan belum dimuat. Klik Muat Ulang untuk mencoba lagi.')
                     : 'Masuk untuk mengakses database laporan.');
             document.getElementById('report-login').classList.toggle('d-none', !cloud || signedIn);
             document.getElementById('report-database-actions').classList.toggle('d-none', !cloud || !signedIn);
-            document.getElementById('migrate-reports').classList.toggle('d-none', !signedIn || !hasLocalReportsToMigrate());
+            document.getElementById('migrate-reports').classList.toggle('d-none', inArchive || !signedIn || !hasLocalReportsToMigrate());
             document.getElementById('saved-reports-content').classList.toggle('d-none', cloud && (!signedIn || !reportsLoaded));
+            document.getElementById('monthly-archive-content').classList.toggle('d-none', !signedIn || !archiveLoaded);
+            document.getElementById('import-archive-button').disabled = reportsBusy;
             document.querySelectorAll('#report-database-panel button').forEach(button => {
                 button.disabled = reportsBusy;
             });
@@ -1772,6 +1829,20 @@
             return runReportTask(loadSavedReports);
         }
 
+        async function loadArchivedReports() {
+            archivedReports = await reportStorage.listArchive();
+            renderArchiveMonths();
+            archiveLoaded = true;
+        }
+
+        function loadSelectedReports() {
+            return activeMenu === 'monthlyarchive' ? loadArchivedReports() : loadSavedReports();
+        }
+
+        function refreshSelectedReports() {
+            return runReportTask(loadSelectedReports);
+        }
+
         function signInToReports(event) {
             event.preventDefault();
             const email = document.getElementById('report-email');
@@ -1779,7 +1850,7 @@
             return runReportTask(async () => {
                 await reportStorage.signIn(email.value.trim(), password.value);
                 password.value = '';
-                await loadSavedReports();
+                await loadSelectedReports();
             }, { requiresLogin: false });
         }
 
@@ -1787,9 +1858,13 @@
             return runReportTask(async () => {
                 await reportStorage.signOut();
                 reportsLoaded = false;
+                archiveLoaded = false;
                 savedReports = [];
+                archivedReports = [];
+                selectedArchiveMonth = null;
                 document.getElementById('report-login').reset();
                 renderSavedReportsTable();
+                renderArchiveMonths();
             });
         }
 
@@ -1849,16 +1924,21 @@
             });
         }
 
-        function toggleSavedReportDetailInline(dateStr, btnElement) {
-            const safeId = "saved-detail-" + dateStr.replace(/\s+/g, '-');
+        function findReport(dateStr, fromArchive) {
+            const reports = fromArchive ? archivedReports : savedReports;
+            return reports.find(report => report.tanggal === dateStr);
+        }
+
+        function toggleSavedReportDetailInline(dateStr, btnElement, fromArchive = false) {
+            const safeId = (fromArchive ? 'archive-detail-' : 'saved-detail-') + dateStr.replace(/\s+/g, '-');
             const existingRow = document.getElementById(safeId);
             if (existingRow) {
                 existingRow.remove(); btnElement.innerHTML = `<i class="fa-solid fa-chevron-down"></i> Breakdown`; btnElement.classList.replace('btn-primary', 'btn-outline-primary');
                 return;
             }
-            let currentReports = savedReports;
-            let foundReport = currentReports.find(r => r.tanggal === dateStr);
-            if(!foundReport || !foundReport.breakdown) return;
+            const foundReport = findReport(dateStr, fromArchive);
+            if (!foundReport) return;
+            if (!foundReport.breakdown?.length) { showToast('Rincian TagLink tidak tersedia.'); return; }
 
             btnElement.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Tutup`; btnElement.classList.replace('btn-outline-primary', 'btn-primary');
             const parentRow = btnElement.closest('tr');
@@ -1869,8 +1949,8 @@
             [...foundReport.breakdown].sort((a, b) => b.komisi - a.komisi).forEach(item => {
                 let profit = item.profit !== undefined ? item.profit : (item.komisi - item.spend);
                 let roas = item.spend > 0 ? (item.komisi / item.spend) : (item.roas || 0);
-                let orderLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved(${handlerArgument(dateStr)}, ${handlerArgument(item.displayTag)})">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
-                let clickLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved(${handlerArgument(dateStr)}, ${handlerArgument(item.displayTag)})">${(item.klikShopee || 0).toLocaleString('id-ID')}</a>`;
+                let orderLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved(${handlerArgument(dateStr)}, ${handlerArgument(item.displayTag)}, ${fromArchive})">${(item.produkTerjual || 0).toLocaleString('id-ID')}</a>`;
+                let clickLink = `<a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved(${handlerArgument(dateStr)}, ${handlerArgument(item.displayTag)}, ${fromArchive})">${(item.klikShopee || 0).toLocaleString('id-ID')}</a>`;
                 
                 tableRowsHtml += `<tr>
                     <td class="fw-bold">${escapeHTML(item.displayTag)}</td>
@@ -1889,10 +1969,11 @@
 
         function renderSavedReportsTable() {
             renderSavedSummaries(false, false);
+            renderReportRows(document.getElementById('tableSavedReportsBody'), savedReports);
+        }
 
-            const tbody = document.getElementById('tableSavedReportsBody');
-            if(!tbody) return;
-            let currentReports = savedReports;
+        function renderReportRows(tbody, reports, fromArchive = false) {
+            let currentReports = reports;
             if (currentReports.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">Belum ada laporan yang disimpan.</td></tr>`; return; }
 
             currentReports = [...currentReports].sort((a, b) => getTimestampFromIndoDate(b.tanggal) - getTimestampFromIndoDate(a.tanggal));
@@ -1901,16 +1982,16 @@
             let tKM = 0, tKS = 0, tP = 0, tS = 0, tK = 0, tPr = 0;
             currentReports.forEach(r => {
                 tKM += r.klikMeta||0; tKS += r.klikShopee||0; tP += r.produkTerjual||0; tS += r.spend||0; tK += r.komisi||0; tPr += r.profit||0;
-                let roas = r.roas !== undefined ? r.roas : (r.spend > 0 ? (r.komisi / r.spend) : 0);
-                tbody.innerHTML += `<tr><td class="fw-bold text-orange">${escapeHTML(r.tanggal)}</td><td>${(r.klikMeta||0).toLocaleString('id-ID')}</td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved(${handlerArgument(r.tanggal)}, 'ALL')">${(r.klikShopee||0).toLocaleString('id-ID')}</a></td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved(${handlerArgument(r.tanggal)}, 'ALL')">${(r.produkTerjual||0).toLocaleString('id-ID')}</a></td><td>${formatIDR(r.spend||0)}</td><td class="text-primary fw-bold">${formatIDR(r.komisi||0)}</td><td class="${(r.profit||0)>=0?'text-success':'text-danger'} fw-bold">${formatIDR(r.profit||0)}</td><td>${formatROAS(roas, r.profit)}</td><td><div class="d-flex gap-1"><button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleSavedReportDetailInline(${handlerArgument(r.tanggal)}, this)"><i class="fa-solid fa-chevron-down"></i> Breakdown</button><button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeReport(${handlerArgument(r.tanggal)})"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`;
+                const roas = r.roas ?? (r.spend > 0 ? ((r.komisi || 0) / r.spend) : 0);
+                const deleteButton = fromArchive ? '' : `<button class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;" onclick="removeReport(${handlerArgument(r.tanggal)})"><i class="fa-solid fa-trash-can"></i></button>`;
+                tbody.innerHTML += `<tr><td class="fw-bold text-orange">${escapeHTML(r.tanggal)}</td><td>${(r.klikMeta||0).toLocaleString('id-ID')}</td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showKlikShopeeModalSaved(${handlerArgument(r.tanggal)}, 'ALL', ${fromArchive})">${(r.klikShopee||0).toLocaleString('id-ID')}</a></td><td><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none" onclick="showDistribusiKlikSaved(${handlerArgument(r.tanggal)}, 'ALL', ${fromArchive})">${(r.produkTerjual||0).toLocaleString('id-ID')}</a></td><td>${formatIDR(r.spend||0)}</td><td class="text-primary fw-bold">${formatIDR(r.komisi||0)}</td><td class="${(r.profit||0)>=0?'text-success':'text-danger'} fw-bold">${formatIDR(r.profit||0)}</td><td>${formatROAS(roas, r.profit)}</td><td><div class="d-flex gap-1"><button class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:11px;" onclick="toggleSavedReportDetailInline(${handlerArgument(r.tanggal)}, this, ${fromArchive})"><i class="fa-solid fa-chevron-down"></i> Breakdown</button>${deleteButton}</div></td></tr>`;
             });
             let totalRoas = tS > 0 ? (tK / tS) : 0;
             tbody.innerHTML += `<tr class="table-secondary fw-bold border-top border-dark"><td class="text-dark">TOTAL KESELURUHAN</td><td>${tKM.toLocaleString('id-ID')}</td><td>${tKS.toLocaleString('id-ID')}</td><td>${tP.toLocaleString('id-ID')}</td><td>${formatIDR(tS)}</td><td class="text-primary">${formatIDR(tK)}</td><td class="${tPr>=0?'text-success':'text-danger'}">${formatIDR(tPr)}</td><td>${formatROAS(totalRoas, tPr)}</td><td></td></tr>`;
         }
 
-        function showDistribusiKlikSaved(dateStr, tagKey) {
-            let currentReports = savedReports;
-            let report = currentReports.find(r => r.tanggal === dateStr);
+        function showDistribusiKlikSaved(dateStr, tagKey, fromArchive = false) {
+            const report = findReport(dateStr, fromArchive);
             if(!report) return;
             
             let details = [];
@@ -1930,9 +2011,8 @@
             new bootstrap.Modal(document.getElementById('distribusiModal')).show();
         }
 
-        function showKlikShopeeModalSaved(dateStr, tagKey) {
-            let currentReports = savedReports;
-            let report = currentReports.find(r => r.tanggal === dateStr);
+        function showKlikShopeeModalSaved(dateStr, tagKey, fromArchive = false) {
+            const report = findReport(dateStr, fromArchive);
             if(!report) return;
             
             let sourceCounts = Object.create(null);
@@ -1960,6 +2040,77 @@
             else sources.forEach(src => tbody.innerHTML += `<tr><td class="text-wrap">${escapeHTML(src)}</td><td class="text-center fw-bold">${sourceCounts[src].toLocaleString('id-ID')}</td></tr>`);
             
             new bootstrap.Modal(document.getElementById('klikShopeeModal')).show();
+        }
+
+        function renderArchiveMonths() {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+            const labels = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const groups = new Map();
+            for (const report of archivedReports) {
+                const [, abbreviatedMonth, year] = report.tanggal.split(' ');
+                const month = months.indexOf(abbreviatedMonth);
+                const key = year && month >= 0 ? year + String(month + 1).padStart(2, '0') : '000000';
+                const label = key === '000000' ? 'Tanggal Tidak Diketahui' : labels[month] + ' ' + year;
+                if (!groups.has(key)) groups.set(key, { label, reports: [] });
+                groups.get(key).reports.push(report);
+            }
+
+            const keys = [...groups.keys()].sort().reverse();
+            if (!groups.has(selectedArchiveMonth)) selectedArchiveMonth = keys[0] ?? null;
+            const buttons = document.getElementById('archive-month-buttons');
+            const table = document.getElementById('archive-table');
+            const tbody = document.getElementById('tableArchiveReportsBody');
+            const title = document.getElementById('archive-table-title');
+            buttons.replaceChildren();
+            table.classList.toggle('d-none', !selectedArchiveMonth);
+            document.getElementById('archive-empty').classList.toggle('d-none', keys.length > 0);
+            tbody.replaceChildren();
+            title.textContent = '';
+
+            function selectMonth(key) {
+                selectedArchiveMonth = key;
+                for (const button of buttons.children) {
+                    const selected = button.dataset.month === key;
+                    button.classList.toggle('active', selected);
+                    button.setAttribute('aria-pressed', String(selected));
+                }
+                const group = groups.get(key);
+                title.textContent = group.label;
+                renderReportRows(tbody, group.reports, true);
+            }
+
+            for (const key of keys) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'btn btn-sm btn-outline-primary';
+                button.textContent = groups.get(key).label;
+                button.dataset.month = key;
+                button.setAttribute('aria-controls', 'archive-table');
+                button.addEventListener('click', () => selectMonth(key));
+                buttons.append(button);
+            }
+
+            if (selectedArchiveMonth) selectMonth(selectedArchiveMonth);
+        }
+
+        function importArchiveJSON(event) {
+            const file = event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+            return runReportTask(async () => {
+                const reports = JSON.parse(await file.text());
+                const added = await reportStorage.importArchive(reports);
+                const skipped = reports.length - added;
+                const message = added + ' laporan ditambahkan ke arsip.' +
+                    (skipped ? ' ' + skipped + ' tanggal duplikat dilewati.' : '');
+                try {
+                    await loadArchivedReports();
+                    showToast(message, false);
+                } catch {
+                    archiveLoaded = false;
+                    showToast(message + ' Daftar arsip gagal dimuat. Silakan muat ulang.');
+                }
+            });
         }
 
         function downloadCSV(csvContent, filename) {
